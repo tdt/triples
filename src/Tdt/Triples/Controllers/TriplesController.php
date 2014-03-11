@@ -3,8 +3,8 @@
 namespace Tdt\Triples\Controllers;
 
 use Tdt\Triples\Repositories\Interfaces\SemanticSourceRepositoryInterface;
-use tdt\core\ContentNegotiator;
-use tdt\core\datasets\Data;
+use Tdt\Core\ContentNegotiator;
+use Tdt\Core\Datasets\Data;
 
 class TriplesController extends \Controller
 {
@@ -82,7 +82,11 @@ class TriplesController extends \Controller
     {
         $result = $this->semantic_source->delete($id);
 
-        $response = \Response::make("", 200);
+        if ($result) {
+            $response = \Response::make("", 200);
+        }else{
+            $response = \Response::make("", 404);
+        }
 
         return $response;
     }

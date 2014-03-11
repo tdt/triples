@@ -4,50 +4,55 @@ use Illuminate\Support\ServiceProvider;
 
 class TriplesServiceProvider extends ServiceProvider {
 
-	/**
-	 * Indicates if loading of the provider is deferred.
-	 *
-	 * @var bool
-	 */
-	protected $defer = false;
+    /**
+     * Indicates if loading of the provider is deferred.
+     *
+     * @var bool
+     */
+    protected $defer = false;
 
-	/**
-	 * Bootstrap the application events.
-	 *
-	 * @return void
-	 */
-	public function boot()
-	{
-		$this->package('tdt/triples');
+    /**
+     * Bootstrap the application events.
+     *
+     * @return void
+     */
+    public function boot()
+    {
+        $this->package('tdt/triples');
 
-		include __DIR__ . '/../../routes.php';
-	}
+        include __DIR__ . '/../../routes.php';
+    }
 
-	/**
-	 * Register the service provider.
-	 *
-	 * @return void
-	 */
-	public function register()
-	{
-		$this->app->bind(
-			'Tdt\Triples\Repositories\Interfaces\SemanticSourceRepositoryInterface',
-			'Tdt\Triples\Repositories\SemanticSourceRepository'
-		);
+    /**
+     * Register the service provider.
+     *
+     * @return void
+     */
+    public function register()
+    {
+        $this->app->bind(
+            'Tdt\Triples\Repositories\Interfaces\SemanticSourceRepositoryInterface',
+            'Tdt\Triples\Repositories\SemanticSourceRepository'
+        );
 
-		$this->app->bind(
-			'Tdt\Triples\Repositories\Interfaces\TurtleSourceRepositoryInterface',
-			'Tdt\Triples\Repositories\TurtleSourceRepository'
-		);
-	}
+        $this->app->bind(
+            'Tdt\Triples\Repositories\Interfaces\TurtleSourceRepositoryInterface',
+            'Tdt\Triples\Repositories\TurtleSourceRepository'
+        );
 
-	/**
-	 * Get the services provided by the provider.
-	 *
-	 * @return array
-	 */
-	public function provides()
-	{
-		return array();
-	}
+        $this->app->bind(
+            'Tdt\Triples\Repositories\Interfaces\TripleRepositoryInterface',
+            'Tdt\Triples\Repositories\TripleRepository'
+        );
+    }
+
+    /**
+     * Get the services provided by the provider.
+     *
+     * @return array
+     */
+    public function provides()
+    {
+        return array();
+    }
 }

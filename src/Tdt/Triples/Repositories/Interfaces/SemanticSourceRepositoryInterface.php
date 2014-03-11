@@ -34,8 +34,18 @@ interface SemanticSourceRepositoryInterface
     /**
      * Get all the semantic sources
      *
-     * @param array $input
+     * @param integer $limit
+     * @param integer $offset
      * @return array
      */
-    public function getAll();
+    public function getAll($limit, $offset);
+
+    /**
+     * Get all the semantic sources with their source relationship
+     *
+     * @param integer $limit
+     * @param integer $offset
+     * @return array
+     */
+    public function getAllConfigurations($limit = PHP_INT_MAX, $offset = 0);
 }
