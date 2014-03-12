@@ -38,6 +38,8 @@ class BaseSourceRepository
      */
     public function store(array $input)
     {
+        $input = $this->processInput($input);
+
         $source = $this->model->create($input);
 
         if (!empty($source)) {
@@ -85,5 +87,23 @@ class BaseSourceRepository
     public function getAll($limit = PHP_INT_MAX, $offset = 0)
     {
         return $this->model->take($limit)->skip($offset)->get()->toArray();
+    }
+
+    /**
+     * Pre-process the input by assigning default values for empty properties
+     */
+    private function processInput(array $input)
+    {
+
+        foreach ($this->getCreateParameters() as $key => $info) {
+
+            if (empty($input[$key]) && !empty($info['default_value']) || is_numeric(@$info['default_value'])) {
+                $input[$key] = @$info['default_value'];
+            } elseif (empty($input[$key])) {
+                $input[$key] = null;
+            }
+        }
+
+        return $input;
     }
 }

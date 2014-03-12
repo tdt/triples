@@ -44,6 +44,16 @@ class TriplesServiceProvider extends ServiceProvider {
             'Tdt\Triples\Repositories\Interfaces\TripleRepositoryInterface',
             'Tdt\Triples\Repositories\TripleRepository'
         );
+
+        $this->app->bind(
+            'Tdt\Triples\Repositories\Interfaces\RdfSourceRepositoryInterface',
+            'Tdt\Triples\Repositories\RdfSourceRepository'
+        );
+
+        $this->app->bind(
+            'Tdt\Triples\Repositories\Interfaces\SparqlSourceRepositoryInterface',
+            'Tdt\Triples\Repositories\SparqlSourceRepository'
+        );
     }
 
     /**

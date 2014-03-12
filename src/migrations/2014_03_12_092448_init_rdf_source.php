@@ -3,7 +3,7 @@
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Migrations\Migration;
 
-class InitSemanticSource extends Migration {
+class InitRdfSource extends Migration {
 
 	/**
 	 * Run the migrations.
@@ -12,12 +12,10 @@ class InitSemanticSource extends Migration {
 	 */
 	public function up()
 	{
-		// Create the semantic source table
-		Schema::create('semanticsources', function($table){
-
+		// Create table for the rdf source
+		Schema::create('rdfsources', function($table){
 			$table->increments('id');
-			$table->integer('source_id');
-			$table->string('source_type', 255);
+			$table->string('uri', 255);
 			$table->timestamps();
 		});
 	}
@@ -29,7 +27,7 @@ class InitSemanticSource extends Migration {
 	 */
 	public function down()
 	{
-		// Drop the semantic source table
-		Schema::drop('semanticsources');
+		// Drop the table for the rdf source
+		Schema::drop('rdfsources');
 	}
 }

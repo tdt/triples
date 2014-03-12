@@ -13,7 +13,8 @@ class InitTurtleSource extends Migration {
 	public function up()
 	{
 		// Create the table to store turtle file configurations
-		Schema::create('turtle_sources', function($table){
+		Schema::create('turtlesources', function($table){
+
 			$table->increments('id');
 			$table->string('uri', 255);
 			$table->timestamps();
@@ -28,6 +29,6 @@ class InitTurtleSource extends Migration {
 	public function down()
 	{
 		// Drop the turtle_sources table
-		Schema::drop('turtle_sources');
+		Schema::drop('turtlesources');
 	}
 }

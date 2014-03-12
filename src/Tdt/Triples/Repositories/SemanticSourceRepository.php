@@ -147,13 +147,13 @@ class SemanticSourceRepository implements SemanticSourceRepositoryInterface
      */
     private function getSourceRepository($type)
     {
-        try{
+        try {
 
             $repository = \App::make('Tdt\Triples\Repositories\Interfaces\\' . ucfirst($type) . 'SourceRepositoryInterface');
 
             return $repository;
 
-        }catch(\ReflectionException $ex){
+        } catch(\ReflectionException $ex){
             \App::abort(400, "The type that was given, $type, is not a supported one.");
         }
     }
