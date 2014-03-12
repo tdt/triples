@@ -40,7 +40,7 @@ class TripleRepository implements TripleRepositoryInterface
             switch ($source_type) {
                 case 'Turtle':
 
-                    $rdf_reader = new \Tdt\Core\DataControllers\RdfController();
+                    $rdf_reader = new \Tdt\Core\DataControllers\RDFController();
 
                     $configuration = array(
                         'uri' => $semantic_source['uri'],
@@ -56,7 +56,7 @@ class TripleRepository implements TripleRepositoryInterface
                     break;
                 case 'Rdf':
 
-                    $rdf_reader = new \Tdt\Core\DataControllers\RdfController();
+                    $rdf_reader = new \Tdt\Core\DataControllers\RDFController();
 
                     $configuration = array(
                         'uri' => $semantic_source['uri'],
