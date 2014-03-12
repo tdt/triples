@@ -41,6 +41,11 @@ class DataController extends \Controller
 
             $result = $this->triples->getAll($base_uri);
 
+            // If the graph contains no triples, then the uri couldn't resolve to anything, 404 it is
+            if ($result->countTriples() == 0) {
+                \App::abort(404, "The resource couldn't be found, nor dereferenced.");
+            }
+
             $data = new Data();
             $data->data = $result;
             $data->is_semantic = true;
