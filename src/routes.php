@@ -7,6 +7,10 @@
 |--------------------------------------------------------------------------
 */
 
-Route::any('api/triples/{id?}', 'Tdt\Triples\Controllers\TriplesController@handle')->where('id', '[0-9]+');
+Route::any('{dereferenced_uri}', 'Tdt\Triples\Controllers\DataController@resolve')
 
-Route::any('{uri}', 'Tdt\Triples\Controllers\DataController@resolve')->where('uri', '^[^(api|discovery)].*');
+->where('dereferenced_uri', '^(?!api|discovery).*');
+
+Route::any('api/triples/{id?}', 'Tdt\Triples\Controllers\TriplesController@handle')
+
+->where('id', '[0-9]+');
