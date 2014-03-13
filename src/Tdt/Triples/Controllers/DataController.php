@@ -29,13 +29,21 @@ class DataController extends \Controller
         // Check if the identifier resolve to a definition
         $definition_repository = \App::make('Tdt\Core\Repositories\Interfaces\DefinitionRepositoryInterface');
 
+        // Split the uri to check for an (optional) extension (=format)
+        preg_match('/([^\.]*)(?:\.(.*))?$/', $identifier, $matches);
+
+        // URI is always the first match
+        $identifier = $matches[1];
+
+        // Get extension
+        $extension = (!empty($matches[2]))? $matches[2]: null;
 
         if ($definition_repository->exists($identifier)) {
 
             $core_controller = new BaseController();
             return $core_controller->handleRequest($identifier);
 
-        }else{
+        } else {
 
             $base_uri = \URL::to($identifier);
 
@@ -46,12 +54,30 @@ class DataController extends \Controller
                 \App::abort(404, "The resource couldn't be found, nor dereferenced.");
             }
 
+            // Mock a tdt/core definition object that is used in the formatters
+            $identifier_pieces = explode('/', $identifier);
+
+            $resource_name = array_pop($identifier_pieces);
+            $collection_uri = implode('/', $identifier_pieces);
+
+            $definition = array(
+                'resource_name' => $resource_name,
+                'collection_uri' => $collection_uri,
+            );
+
+            $source_definition = array(
+                'description' => 'Semantic data collected out the configuration of semantic data sources related to the given URI.',
+                'type' => 'Semantic',
+            );
+
             $data = new Data();
+            $data->definition = $definition;
+            $data->source_definition = $source_definition;
             $data->data = $result;
             $data->is_semantic = true;
 
             // Return the formatted response with content negotiation
-            return ContentNegotiator::getResponse($data, 'ttl');
+            return ContentNegotiator::getResponse($data, $extension);
         }
     }
 }
