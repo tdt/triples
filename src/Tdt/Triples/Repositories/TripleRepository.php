@@ -172,7 +172,7 @@ class TripleRepository implements TripleRepositoryInterface
         }
 
         $construct_statement = 'construct {' . $vars . '}';
-        $filter_statement = '{ ?s ?p ?o1. FILTER regex( ?s, "' . $base_uri . '", "i")}';
+        $filter_statement = '{ <'. $base_uri .'> ?p ?o1. }';
 
         return $construct_statement . $filter_statement;
     }
