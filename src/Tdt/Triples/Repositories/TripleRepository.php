@@ -161,7 +161,7 @@ class TripleRepository implements TripleRepositoryInterface
      */
     private function createSparqlQuery($base_uri, $depth = 3)
     {
-        $vars = '?s ?p ?o1. ';
+        $vars = '<'. $base_uri .'> ?p ?o1.';
 
         $last_object = '?o1';
 
@@ -172,7 +172,7 @@ class TripleRepository implements TripleRepositoryInterface
         }
 
         $construct_statement = 'construct {' . $vars . '}';
-        $filter_statement = '{ <'. $base_uri .'> ?p ?o1. }';
+        $filter_statement = '{'. $vars . '}';
 
         return $construct_statement . $filter_statement;
     }
