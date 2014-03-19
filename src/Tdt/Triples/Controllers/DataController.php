@@ -2,10 +2,11 @@
 
 namespace Tdt\Triples\Controllers;
 
-use Tdt\Core\BaseController;
 use Tdt\Triples\Repositories\Interfaces\TripleRepositoryInterface;
+use Tdt\Core\Repositories\Interfaces\DefinitionRepositoryInterface;
 use Tdt\Core\ContentNegotiator;
 use Tdt\Core\Datasets\Data;
+use Tdt\Core\Formatters\FormatHelper;
 
 /**
  * DataController checks if the core application can resolve
@@ -19,30 +20,37 @@ class DataController extends \Controller
 {
     protected $triples;
 
-    public function __construct(TripleRepositoryInterface $triples)
+    public function __construct(TripleRepositoryInterface $triples, DefinitionRepositoryInterface $definition)
     {
         $this->triples = $triples;
+        $this->definition = $definition;
     }
 
     public function resolve($identifier)
     {
-        // Check if the identifier resolve to a definition
-        $definition_repository = \App::make('Tdt\Core\Repositories\Interfaces\DefinitionRepositoryInterface');
-
         // Split the uri to check for an (optional) extension (=format)
         preg_match('/([^\.]*)(?:\.(.*))?$/', $identifier, $matches);
 
         // URI is always the first match
         $identifier = $matches[1];
 
+        $data;
+
         // Get extension
         $extension = (!empty($matches[2]))? $matches[2]: null;
 
-        if ($definition_repository->exists($identifier)) {
+        if ($this->definition->exists($identifier)) {
 
-            $core_controller = new BaseController();
-            return $core_controller->handleRequest($identifier);
+            $controller = \App::make('Tdt\Core\Datasets\DatasetController');
 
+            $data = $controller->fetchData($identifier);
+
+            $definition = $this->definition->getByIdentifier($identifier);
+            $data->definition = $definition;
+            $data->source_definition = $this->definition->getDefinitionSource($definition['source_id'], $definition['source_type']);
+
+            $format_helper = new FormatHelper();
+            $data->formats = $format_helper->getAvailableFormats($data);
         } else {
 
             $base_uri = \URL::to($identifier);
@@ -75,9 +83,9 @@ class DataController extends \Controller
             $data->source_definition = $source_definition;
             $data->data = $result;
             $data->is_semantic = true;
-
-            // Return the formatted response with content negotiation
-            return ContentNegotiator::getResponse($data, $extension);
         }
+
+        // Return the formatted response with content negotiation
+        return ContentNegotiator::getResponse($data, $extension);
     }
 }
