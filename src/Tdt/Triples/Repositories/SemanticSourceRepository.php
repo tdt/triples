@@ -169,7 +169,7 @@ class SemanticSourceRepository implements SemanticSourceRepositoryInterface
 
         $source_properties = array(
             'id' => $id,
-            'source_type' => $source->type,
+            'type' => $source->type,
         );
 
         foreach ($source->getFillable() as $key) {
@@ -213,7 +213,7 @@ class SemanticSourceRepository implements SemanticSourceRepositoryInterface
      */
     private function validateSourceType(array $input)
     {
-        $type = @$input['source_type'];
+        $type = @$input['type'];
 
         // If no source type is given, abort the process.
         if (empty($type)) {

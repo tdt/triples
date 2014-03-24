@@ -34,7 +34,7 @@ class TripleRepository implements TripleRepositoryInterface
         // Iterate every source and retrieve only the triples with a subject matching the base uri
         foreach ($semantic_sources as $semantic_source) {
 
-            $source_type = $semantic_source['source_type'];
+            $source_type = $semantic_source['type'];
 
             $input_graph;
 
