@@ -21,6 +21,7 @@ class TripleRepository implements TripleRepositoryInterface
      * @param string $base_uri
      * @param integer $limit
      * @param integer $offset
+     *
      * @return EasyRdf_Graph
      */
     public function getAll($base_uri, $limit = PHP_INT_MAX, $offset = 0)
@@ -91,13 +92,16 @@ class TripleRepository implements TripleRepositoryInterface
                     break;
                 default:
                     // TODO: change this to a log warning
-                    \App::abort(400, "The source type, $source_type, was configured, but no reader has been found
-                        to extract semantic data from it.");
+                    \App::abort(
+                        400,
+                        "The source type, $source_type, was configured, but no reader has been found
+                        to extract semantic data from it."
+                    );
                     break;
             }
         }
 
-        // Apply paging
+        // Apply paging (TODO)
 
 
         // Return the resulting graph
@@ -111,6 +115,7 @@ class TripleRepository implements TripleRepositoryInterface
      * @param string $base_uri
      * @param EasyRdf_Graph $input
      * @param EasyRdf_Graph $graph
+     *
      * @return EasyRdf_Graph
      */
     private function addTriplesToGraph($base_uri, $input, $graph)
@@ -141,6 +146,7 @@ class TripleRepository implements TripleRepositoryInterface
      *
      * @param EasyRdf_Graph $graph
      * @param EasyRdf_Graph $input_graph
+     *
      * @return EasyRdf_Graph
      */
     private function mergeGraph($graph, $input_graph)
@@ -157,6 +163,7 @@ class TripleRepository implements TripleRepositoryInterface
      * of which the subject matches the base uri
      *
      * @param string $base_uri
+     *
      * @return string
      */
     private function createSparqlQuery($base_uri, $depth = 3)
@@ -182,6 +189,7 @@ class TripleRepository implements TripleRepositoryInterface
      * have a subject that matches base_uri
      *
      * @param $base_uri
+     *
      * @return integer
      */
     public function getCount($base_uri)

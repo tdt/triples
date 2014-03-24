@@ -22,6 +22,7 @@ class SparqlSourceRepository extends BaseSourceRepository implements SparqlSourc
      * Update a turtle source configuration
      *
      * @param array $input
+     *
      * @return array Model
      */
     public function update(array $input)
@@ -40,7 +41,8 @@ class SparqlSourceRepository extends BaseSourceRepository implements SparqlSourc
      *
      * @return array
      */
-    public function getCreateParameters(){
+    public function getCreateParameters()
+    {
         return array(
             'endpoint' => array(
                 'required' => true,

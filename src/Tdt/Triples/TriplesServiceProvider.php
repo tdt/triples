@@ -2,7 +2,8 @@
 
 use Illuminate\Support\ServiceProvider;
 
-class TriplesServiceProvider extends ServiceProvider {
+class TriplesServiceProvider extends ServiceProvider
+{
 
     /**
      * Indicates if loading of the provider is deferred.

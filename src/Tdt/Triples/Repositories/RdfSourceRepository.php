@@ -20,6 +20,7 @@ class RdfSourceRepository extends BaseSourceRepository implements RdfSourceRepos
      * Update a turtle source configuration
      *
      * @param array $input
+     *
      * @return array Model
      */
     public function update(array $input)
@@ -38,7 +39,8 @@ class RdfSourceRepository extends BaseSourceRepository implements RdfSourceRepos
      *
      * @return array
      */
-    public function getCreateParameters(){
+    public function getCreateParameters()
+    {
         return array(
             'uri' => array(
                 'required' => true,

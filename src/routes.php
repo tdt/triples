@@ -7,7 +7,7 @@
 |--------------------------------------------------------------------------
 */
 
-Route::any('{dereferenced_uri}', 'Tdt\Triples\Controllers\DataController@resolve')
+Route::get('{dereferenced_uri}', 'Tdt\Triples\Controllers\DataController@resolve')
 
 ->where('dereferenced_uri', '^(?!api|discovery).+');
 

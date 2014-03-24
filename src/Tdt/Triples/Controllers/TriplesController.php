@@ -23,12 +23,14 @@ class TriplesController extends \Controller
 
         switch($method){
             case "PUT":
-                return $this->put();
+                return $this->put($id);
                 break;
             case "GET":
                 return $this->get();
                 break;
             case "POST":
+                return $this->post();
+                break;
             case "PATCH":
                 return $this->patch();
                 break;
@@ -45,6 +47,11 @@ class TriplesController extends \Controller
         }
     }
 
+    /**
+     * Get all of the configured semantic sources
+     *
+     * @return \Response
+     */
     public function get()
     {
         $sources = $this->semantic_source->getAllConfigurations();
@@ -55,7 +62,12 @@ class TriplesController extends \Controller
         return ContentNegotiator::getResponse($result, 'json');
     }
 
-    public function put()
+    /**
+     * Create a new semantic source from which triples can be retrieved
+     *
+     * @return \Response
+     */
+    public function post()
     {
         // Retrieve the input from the request.
         $input = $this->fetchInput();
@@ -68,23 +80,42 @@ class TriplesController extends \Controller
         return $response;
     }
 
+    public function put($id)
+    {
+        $input = $this->fetchInput();
+
+        $result = $this->semantic_source->update($id, $input);
+
+        $response = \Response::make("", 200);
+        $response->header('Location', \URL::to('api/triples'));
+
+        return $response;
+    }
+
     public function patch()
     {
-        \App::abort(405, "The HTTP method '$method' is not supported by this resource.");
+        \App::abort(405, "The HTTP method patch is not supported by this resource.");
     }
 
     public function head()
     {
-        \App::abort(405, "The HTTP method '$method' is not supported by this resource.");
+        \App::abort(405, "The HTTP method head is not supported by this resource.");
     }
 
+    /**
+     * Delete a configured semantic source
+     *
+     * @param integer $id The id of the semantic source
+     *
+     * @return \Response
+     */
     public function delete($id)
     {
         $result = $this->semantic_source->delete($id);
 
         if ($result) {
             $response = \Response::make("", 200);
-        }else{
+        } else {
             $response = \Response::make("", 404);
         }
 
@@ -92,7 +123,9 @@ class TriplesController extends \Controller
     }
 
     /**
-     * Retrieve the input, make sure all keys are lowercased
+     * Retrieve the input of the request and lowercase all of the keys
+     *
+     * @return array
      */
     private function fetchInput()
     {
@@ -102,7 +135,7 @@ class TriplesController extends \Controller
         // Is the body passed as JSON, if not try getting the request parameters from the uri
         if (!empty($input)) {
             $input = json_decode($input, true);
-        }else{
+        } else {
             $input = \Input::all();
         }
 

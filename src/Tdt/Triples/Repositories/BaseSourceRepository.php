@@ -23,7 +23,8 @@ class BaseSourceRepository
      *  Return validator based on the input
      *
      * @param array $input
-     * return Illuminate\Support\Facades\Validator
+     *
+     * @return Illuminate\Support\Facades\Validator
      */
     public function getValidator(array $input)
     {
@@ -34,6 +35,7 @@ class BaseSourceRepository
      * Store a new model object
      *
      * @param array $input
+     *
      * @return array|null
      */
     public function store(array $input)
@@ -53,6 +55,7 @@ class BaseSourceRepository
      * Delete an object of model
      *
      * @param integer $id
+     *
      * @return bool|null
      */
     public function delete($id)
@@ -63,13 +66,14 @@ class BaseSourceRepository
             \App::abort(500, "The id, $id, could not be fetched for the current model (" . get_class($this->model) . ").");
         }
 
-        return $this->model->delete($id);
+        return $object->delete($id);
     }
 
     /**
      * Return an object based on the given id
      *
      * @param integer $id
+     *
      * @return array model
      */
     public function getById($id)
@@ -82,6 +86,7 @@ class BaseSourceRepository
      *
      * @param integer $limit
      * @param integer $offset
+     *
      * @return array model
      */
     public function getAll($limit = PHP_INT_MAX, $offset = 0)

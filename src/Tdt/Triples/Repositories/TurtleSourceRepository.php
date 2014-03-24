@@ -21,6 +21,7 @@ class TurtleSourceRepository extends BaseSourceRepository implements TurtleSourc
      * Update a turtle source configuration
      *
      * @param array $input
+     *
      * @return array Model
      */
     public function update(array $input)
@@ -39,7 +40,8 @@ class TurtleSourceRepository extends BaseSourceRepository implements TurtleSourc
      *
      * @return array
      */
-    public function getCreateParameters(){
+    public function getCreateParameters()
+    {
         return array(
             'uri' => array(
                 'required' => true,
