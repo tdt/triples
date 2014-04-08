@@ -2,6 +2,8 @@
 
 tdt/triples is a repository that hooks into [The DataTank core](https://github.com/tdt/core) application, and provides the functionality to build your URI space through the configuration of semantic resources, in addition to the URI space of The DataTank.
 
+It specifically needs a MySQL database for optimization purposes, make sure you datatank project is configured with a MySQL connection.
+
 ## Purpose
 
 The core application allows for the RESTful publication of data sources, from any machine readable format, to web-ready formats. (e.g. SPARQL, SHP, CSV, XLS, ... to JSON-LD, JSON, XML, PHP, RDF/XML, RDF/JSON, and even map visualizations)

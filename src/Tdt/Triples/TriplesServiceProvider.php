@@ -1,4 +1,6 @@
-<?php namespace Tdt\Triples;
+<?php
+
+namespace Tdt\Triples;
 
 use Illuminate\Support\ServiceProvider;
 

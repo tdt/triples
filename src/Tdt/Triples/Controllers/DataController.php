@@ -51,11 +51,12 @@ class DataController extends \Controller
 
             $format_helper = new FormatHelper();
             $data->formats = $format_helper->getAvailableFormats($data);
+
         } else {
 
             $base_uri = \URL::to($identifier);
 
-            $result = $this->triples->getAll($base_uri);
+            $result = $this->triples->getTriples($base_uri);
 
             // If the graph contains no triples, then the uri couldn't resolve to anything, 404 it is
             if ($result->countTriples() == 0) {

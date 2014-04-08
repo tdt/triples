@@ -3,6 +3,7 @@
 namespace Tdt\Triples\Controllers;
 
 use Tdt\Triples\Repositories\Interfaces\SemanticSourceRepositoryInterface;
+use Tdt\Triples\Repositories\Interfaces\TripleRepositoryInterface;
 use Tdt\Core\ContentNegotiator;
 use Tdt\Core\Datasets\Data;
 
@@ -10,10 +11,12 @@ class TriplesController extends \Controller
 {
 
     protected $semantic_source;
+    protected $triple_store;
 
-    public function __construct(SemanticSourceRepositoryInterface $semantic_source)
+    public function __construct(SemanticSourceRepositoryInterface $semantic_source, TripleRepositoryInterface $triple_store)
     {
         $this->semantic_source = $semantic_source;
+        $this->triple_store = $triple_store;
     }
 
     public function handle($id = null)
@@ -72,7 +75,11 @@ class TriplesController extends \Controller
         // Retrieve the input from the request.
         $input = $this->fetchInput();
 
+        // Store the new configuration
         $result = $this->semantic_source->store($input);
+
+        // Sync the semantic data in our store
+        $this->triple_store->cacheTriples($input);
 
         $response = \Response::make("", 200);
         $response->header('Location', \URL::to('api/triples'));
