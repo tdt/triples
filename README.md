@@ -2,7 +2,7 @@
 
 tdt/triples is a repository that hooks into [The DataTank core](https://github.com/tdt/core) application, and provides the functionality to build your URI space through the configuration of semantic resources, in addition to the URI space of The DataTank.
 
-It specifically needs a MySQL database for optimization purposes, make sure your datatank project is configured with a MySQL connection.
+It specifically needs a MySQL database for optimization purposes, make sure your datatank project is configured with a MySQL connection. Also note that for caching purposes it uses the semsol/arc2 library which works on PHP 5.3 and 5.4. From 5.5 the MySQL driver that semsol/arc2 uses is [deprecated](https://github.com/semsol/arc2/issues/58). This can be solved by creating a different TriplesRepository instance that uses a genuine triplestore (or other solutions) for caching. Due to dependency injection, this is quite easy to implement.
 
 ## Purpose
 
