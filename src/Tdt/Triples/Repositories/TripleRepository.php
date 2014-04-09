@@ -28,14 +28,16 @@ class TripleRepository implements TripleRepositoryInterface
      */
     public function getTriples($base_uri, $limit = 5000, $offset = 0)
     {
-
-        $this->getCount($base_uri);
-
-        $query = $this->createSparqlQuery($base_uri);
+        $query = $this->createSparqlQuery($base_uri, $limit, $offset);
 
         $store = $this->setUpArc2Store();
 
         $result = $store->query($query);
+
+        // The result will be in an array structure, we need to build an
+        // EasyRdf_Graph out of this
+
+        $graph = $this->buildGraph($result['result']);
 
         if (!$result) {
             $message = array_shift($store->getErrors());
@@ -43,12 +45,105 @@ class TripleRepository implements TripleRepositoryInterface
             \Log::error(500, "Something went wrong while fetching triples from the store: ");
         }
 
-        // Fetch data out of the sparql endpoint as well, if necessary
+        // Fetch data out of the sparql endpoint as well,
+        // if necessary according to the paging parameters
+        // What we are trying to accomplish is a simulated paging mechanism
+        // But since sparql sources aren't cached, this mechanism will
+        // have to be simulated.
+        $count_arc_triples = $this->countARC2Triples($base_uri);
 
-        // The result will be in an array structure, we need to build an
-        // EasyRdf_Graph out of this
+        $triples_fetched = $count_arc_triples - $offset;
 
-        return $this->buildGraph($result['result']);
+        if ($count_arc_triples < $offset + $limit) {
+
+            $total_triples = 0;
+
+            if ($count_arc_triples > $offset) {
+                $total_triples = $count_arc_triples - $offset;
+            }
+
+            // If the fetched triples are negative, this means that we didnt fetch any triples at all
+            if ($triples_fetched < 0) {
+                $offset = $triples_fetched * -1;
+                $graph = new EasyRdf_Graph();
+            } else {
+                // The entire offset has been met in the ARC2 store
+                $offset = 0;
+            }
+
+            // For every semantic source, count the triples we'll get out of them
+            $sparql_repo = \App::make('Tdt\Triples\Repositories\Interfaces\SparqlSourceRepositoryInterface');
+
+            foreach ($sparql_repo->getAll() as $sparql_source) {
+
+                if ($total_triples < $limit) {
+
+                    $endpoint = $sparql_source['endpoint'];
+                    $pw = $sparql_source['endpoint_password'];
+                    $user = $sparql_source['endpoint_user'];
+
+                    $endpoint = rtrim($endpoint, '/');
+
+                    // Prepare the count query
+                    $count_query = "select (count(*) AS ?count) WHERE { <$base_uri> ?p ?o. OPTIONAL {?o ?p1 ?o1. ?o1 ?p2 ?o3. }}";
+
+                    $count_query = urlencode($count_query);
+                    $count_query = str_replace("+", "%20", $count_query);
+
+                    $query_uri = $endpoint . '?query=' . $count_query . '&format=' . urlencode("application/sparql-results+json");
+
+                    $result = $this->executeUri($query_uri, $user, $pw);
+
+                    $response = json_decode($result);
+
+                    if (!empty($response)) {
+
+                        $count = $response->results->bindings[0]->count->value;
+
+                        // If the amount of matching triples is higher than the offset
+                        // add them and update the offset, if not higher, then only update the offset
+
+                        if ($count > $offset) {
+                            // Read the triples from the sparql endpoint
+                            $query_limit = $limit - $total_triples;
+
+                            $query = $this->createSparqlQuery($base_uri, $query_limit, $offset);
+
+                            $query = urlencode($query);
+                            $query = str_replace("+", "%20", $query);
+
+                            $query_uri = $endpoint . '?query=' . $query . '&format=' . urlencode("application/rdf+xml");
+
+                            $result = $this->executeUri($query_uri, $user, $pw);
+
+                            if (!empty($result) && $result[0] == '<') {
+                                // Parse the triple response and retrieve the triples from them
+                                $result_graph = new \EasyRdf_Graph();
+                                $parser = new \EasyRdf_Parser_RdfXml();
+
+                                $parser->parse($result_graph, $result, 'rdfxml', null);
+
+                                $graph = $this->mergeGraph($graph, $result_graph);
+
+                                $total_triples += $count - $offset;
+                            } else {
+                                \Log::error("Something went wrong while fetching the triples from a sparql source. The error was " . $result . ". The query was : " . $query_uri);
+                            }
+
+                        } else {
+                            // Update the offset
+                            $offset -= $count;
+                        }
+
+                        if ($offset < 0) {
+                            $offset = 0;
+                        }
+                    }
+                }
+            }
+        }
+
+        return $graph;
     }
 
     /**
@@ -79,7 +174,7 @@ class TripleRepository implements TripleRepositoryInterface
                 $configuration = array(
                     'uri' => $config['uri'],
                     'format' => 'turtle',
-                );
+                    );
 
                 $data = $rdf_reader->readData($configuration, array());
                 $graph = $data->data;
@@ -92,7 +187,7 @@ class TripleRepository implements TripleRepositoryInterface
                 $configuration = array(
                     'uri' => $config['uri'],
                     'format' => 'xml',
-                );
+                    );
 
                 $data = $rdf_reader->readData($configuration, array());
                 $graph = $data->data;
@@ -240,7 +335,7 @@ class TripleRepository implements TripleRepositoryInterface
             'db_user' => $mysql_config['username'],
             'db_pwd' => $mysql_config['password'],
             'store_name' => $mysql_config['prefix'],
-        );
+            );
 
         $store = \ARC2::getStore($config);
 
@@ -319,7 +414,7 @@ class TripleRepository implements TripleRepositoryInterface
      *
      * @return string
      */
-    private function createSparqlQuery($base_uri, $depth = 3, $limit = 5000, $offset = 0)
+    private function createSparqlQuery($base_uri, $limit = 5000, $offset = 0, $depth = 3)
     {
         $vars = '<'. $base_uri .'> ?p ?o1.';
 
@@ -396,6 +491,23 @@ class TripleRepository implements TripleRepositoryInterface
     }
 
     /**
+     * Merge two graphs and return the result
+     *
+     * @param EasyRdf_Graph $graph
+     * @param EasyRdf_Graph $input_graph
+     *
+     * @return EasyRdf_Graph
+     */
+    private function mergeGraph($graph, $input_graph)
+    {
+        $turtle_graph = $input_graph->serialise('turtle');
+
+        $graph->parse($turtle_graph, 'turtle');
+
+        return $graph;
+    }
+
+    /**
      * Return the total amount of triples that
      * have a subject that matches base_uri
      *
@@ -407,16 +519,7 @@ class TripleRepository implements TripleRepositoryInterface
     {
         $triples_amount = 0;
 
-        // Count the triples in our ARC2 store
-        $count_query = "select (count(?p) as ?count) WHERE { <$base_uri> ?p ?o. OPTIONAL {?o ?p1 ?o1. ?o1 ?p2 ?o3. }}";
-
-        $store = $this->setUpArc2Store();
-
-        $result = $store->query($count_query, 'raw');
-
-        $arc2_triples_count = $result['rows'][0]['count'];
-
-        $triples_amount += $arc2_triples_count;
+        $triples_amount += $this->countARC2Triples($base_uri);
 
         // Count the triples in the sparql sources (these aren't cached in our store)
         $sparql_repo = \App::make('Tdt\Triples\Repositories\Interfaces\SparqlSourceRepositoryInterface');
@@ -449,6 +552,27 @@ class TripleRepository implements TripleRepositoryInterface
         }
 
         return $triples_amount;
+    }
+
+    /**
+     * Count the amount of triples that are in the ARC2 store given a certain base_uri
+     *
+     * @param string $base_uri
+     *
+     * @return integer
+     */
+    private function countARC2Triples($base_uri)
+    {
+        // Count the triples in our ARC2 store
+        $count_query = "select (count(?p) as ?count) WHERE { <$base_uri> ?p ?o. OPTIONAL {?o ?p1 ?o1. ?o1 ?p2 ?o3. }}";
+
+        $store = $this->setUpArc2Store();
+
+        $result = $store->query($count_query, 'raw');
+
+        $arc2_triples_count = $result['rows'][0]['count'];
+
+        return $arc2_triples_count;
     }
 
     /**
