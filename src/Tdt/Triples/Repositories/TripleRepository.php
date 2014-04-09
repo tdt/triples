@@ -10,6 +10,8 @@ class TripleRepository implements TripleRepositoryInterface
 
     protected $semantic_sources;
 
+    private static $graph_name = "http://cachedtriples.foo/";
+
     public function __construct(SemanticSourceRepositoryInterface $semantic_sources)
     {
         $this->semantic_sources = $semantic_sources;
@@ -47,10 +49,10 @@ class TripleRepository implements TripleRepositoryInterface
     /**
      * Store (=cache) triples into a triplestore (or equivalents) for optimization
      *
-     * @param string $type  The type of the source where triples will be extracted from
+     * @param integer $id   The id of the configured semantic source
      * @param array $config The configuration needed to extract the triples
      */
-    public function cacheTriples(array $config)
+    public function cacheTriples($id, array $config)
     {
         // Fetch the ARC2 triplestore
         $store = $this->setUpArc2Store();
@@ -114,7 +116,10 @@ class TripleRepository implements TripleRepositoryInterface
                 break;
         }
 
-        // Extract the semantic data and push it into the ARC2 triple store
+        // Make the graph name to cache the triples into
+        $graph_name = self::$graph_name . $id;
+
+        // Serialise the triples into turtle
         $ttl = $graph->serialise('turtle');
 
         // Parse the turlte into an ARC graph
@@ -122,11 +127,15 @@ class TripleRepository implements TripleRepositoryInterface
 
         $ser = \ARC2::getNTriplesSerializer();
 
+        // Parse the turtle string
         $arc_parser->parse('', $ttl);
 
         // Serialize the triples again, this is because an EasyRdf_Graph has
-        // troubles with serializing in unicode. The underlying bytes are
+        // troubles with serializing unicode. The underlying bytes are
         // not properly converted to utf8 characters by our serialize function
+        // A dump shows that all unicode encodings through serialization are the same (in easyrdf and arc)
+        // however when we convert the string (binary) into a utf8, only the arc2 serialization
+        // comes out correctly, hence something beneath the encoding (byte sequences?) must hold some wrongs.
         $triples = $ser->getSerializedTriples($arc_parser->getTriples());
 
         preg_match_all("/(<.*\.)/", $triples, $matches);
@@ -137,6 +146,9 @@ class TripleRepository implements TripleRepositoryInterface
             $triples_buffer = $matches[0];
         }
 
+        \Log::info("--------------- CACHING TRIPLES -------------------------");
+        \Log::info("Starting insertion of triples into the ARC2 RDF Store into the graph with the name " . $graph_name);
+
         // Insert the triples in a chunked manner (not all triples at once)
         $buffer_size = 20;
 
@@ -144,36 +156,41 @@ class TripleRepository implements TripleRepositoryInterface
 
             $triples_to_cache = array_slice($triples_buffer, 0, $buffer_size);
 
-            $this->addTriples($triples_to_cache, $store);
+            $this->addTriples($graph_name, $triples_to_cache, $store);
 
             $triples_buffer = array_slice($triples_buffer, $buffer_size);
         }
 
         // Insert the last triples in the buffer
-        $this->addTriples($triples_buffer, $store);
+        $this->addTriples($graph_name, $triples_buffer, $store);
+
+        \Log::info("--------------- DONE CACHING TRIPLES -------------------");
     }
 
     /**
      * Insert triples into the triple store
-     * //TODO logging
-     * @param array $triples
-     * @param mixed $store
+     *
+     * @param string $graph_name The graph name of the graph to store the triples into
+     * @param array  $triples    The triples that need to be stored
+     * @param mixed  $store      The store in which the triples will go
      *
      * @return void
      */
-    private function addTriples($triples, $store)
+    private function addTriples($graph_name, $triples, $store)
     {
         $triples_string = implode(' ', $triples);
 
         $serialized = $this->serialize($triples_string);
 
-        $query = $this->createInsertQuery($serialized);
+        $query = $this->createInsertQuery($graph_name, $serialized);
 
         // Execute the query
         $result = $store->query($query);
 
         // If the insert fails, insert every triple one by one
         if (!$result) {
+
+            \Log::warning("Inserting a chunk of the triples from the buffer failed. Every triple will be inserted separately.");
 
             $totalTriples = count($triples);
 
@@ -182,16 +199,16 @@ class TripleRepository implements TripleRepositoryInterface
 
                 $serialized = $this->serialize($triple);
 
-                $query = $this->createInsertQuery($serialized);
+                $query = $this->createInsertQuery($graph_name, $serialized);
 
                 // Execute the query
                 $result = $store->query($query);
 
                 // TODO logging
                 if (!$result) {
-
+                    \Log::error("Inserting the triple (" . $triple . ") failed, please make sure that it's a valid triple.");
                 } else {
-
+                    \Log::info("Successfully insert triple: " . $triple);
                 }
             }
         }
@@ -233,17 +250,41 @@ class TripleRepository implements TripleRepositoryInterface
 
     /**
      * Create an insert SPARQL query based on the graph id
-     * @param string $triples (need to be serialized == properly encoded)
      *
-     * @return string Insert query
+     * @param string $graph_name The graph in which the triples will go
+     * @param string $triples    The triples that need to be stored
+     *
+     * @return string
      */
-    private function createInsertQuery($triples)
+    private function createInsertQuery($graph_name, $triples)
     {
-        $query = "INSERT INTO <http://localhost/cache> {";
+        $query = "INSERT INTO <$graph_name> {";
         $query .= $triples;
         $query .= ' }';
 
         return $query;
+    }
+
+    /**
+     * Remove the cached triples coming from a certain semantic source
+     *
+     * @param integer $id The id of the semantic source configuration
+     */
+    public function removeTriples($id)
+    {
+        $graph_name = self::$graph_name . $id;
+
+        $delete_query = "DELETE {?s ?p ?o } FROM <" . $graph_name . '> { ?s ?p ?o}';
+
+        $store = $this->setUpArc2Store();
+
+        $result = $store->query($delete_query, 'raw');
+
+        \Log::info("The triples from the graph " . $graph_name . " have been deleted.");
+
+        if (!$result) {
+            \Log::warning("The delete query that deletes triples from graph with id $id, encountered an error.");
+        }
     }
 
     /**

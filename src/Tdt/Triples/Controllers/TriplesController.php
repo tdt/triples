@@ -78,13 +78,18 @@ class TriplesController extends \Controller
         // Store the new configuration
         $result = $this->semantic_source->store($input);
 
-        // Sync the semantic data in our store
-        $this->triple_store->cacheTriples($input);
+        if (!empty($result) && is_array($result)) {
 
-        $response = \Response::make("", 200);
-        $response->header('Location', \URL::to('api/triples'));
+            // Sync the semantic data in our store
+            $this->triple_store->cacheTriples($result['id'], $input);
 
-        return $response;
+            $response = \Response::make("", 200);
+            $response->header('Location', \URL::to('api/triples'));
+
+            return $response;
+        } else {
+            \App::abort(500, "An unknown error occurred, the semantic configuration could not be stored.");
+        }
     }
 
     public function put($id)
@@ -119,6 +124,9 @@ class TriplesController extends \Controller
     public function delete($id)
     {
         $result = $this->semantic_source->delete($id);
+
+        // Delete the corresponding graph that cached the triples
+        $this->triple_store->removeTriples($id);
 
         if ($result) {
             $response = \Response::make("", 200);

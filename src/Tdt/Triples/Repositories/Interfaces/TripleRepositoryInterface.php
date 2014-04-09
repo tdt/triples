@@ -26,7 +26,15 @@ interface TripleRepositoryInterface
     /**
      * Store (=cache) triples into a triplestore (or equivalents) for optimization
      *
-     * @param array $config The configuration needed to extract the triples
+     * @param string $graph_name The name of the graph in which the triples will be stored
+     * @param array  $config     The configuration needed to extract the triples
      */
-    public function cacheTriples(array $config);
+    public function cacheTriples($graph_name, array $config);
+
+    /**
+     * Remove the cached triples coming from a certain semantic source
+     *
+     * @param integer $id The id of the semantic source configuration
+     */
+    public function removeTriples($id);
 }
