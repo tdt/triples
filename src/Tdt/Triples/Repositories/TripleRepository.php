@@ -26,8 +26,11 @@ class TripleRepository implements TripleRepositoryInterface
      *
      * @return EasyRdf_Graph
      */
-    public function getTriples($base_uri, $limit = PHP_INT_MAX, $offset = 0)
+    public function getTriples($base_uri, $limit = 5000, $offset = 0)
     {
+
+        $this->getCount($base_uri);
+
         $query = $this->createSparqlQuery($base_uri);
 
         $store = $this->setUpArc2Store();
@@ -37,8 +40,10 @@ class TripleRepository implements TripleRepositoryInterface
         if (!$result) {
             $message = array_shift($store->getErrors());
 
-            \App::abort(500, "Something went wrong while fetching triples from the store: ");
+            \Log::error(500, "Something went wrong while fetching triples from the store: ");
         }
+
+        // Fetch data out of the sparql endpoint as well, if necessary
 
         // The result will be in an array structure, we need to build an
         // EasyRdf_Graph out of this
@@ -63,6 +68,8 @@ class TripleRepository implements TripleRepositoryInterface
         $source_type = strtolower($type);
 
         $graph = '';
+
+        $caching_necessary = true;
 
         switch ($source_type) {
             case 'turtle':
@@ -93,17 +100,9 @@ class TripleRepository implements TripleRepositoryInterface
                 break;
             case 'sparql':
 
-                $sparql_reader = \App::make('\Tdt\Core\DataControllers\SparqlController');
+                // Do nothing, the sparql endpoint is already optimized for read operations
 
-                $configuration = array(
-                    'query' => $this->createSparqlQuery($base_uri, @$config['depth']),
-                    'endpoint' => $config['endpoint'],
-                    'endpoint_user' => @$config['endpoint_user'],
-                    'endpoint_password' => @$config['endpoint_password'],
-                );
-
-                $data = $sparql_reader->readData($configuration, array());
-                $graph = $data->data;
+                $caching_necessary = false;
 
                 break;
             default:
@@ -116,55 +115,58 @@ class TripleRepository implements TripleRepositoryInterface
                 break;
         }
 
-        // Make the graph name to cache the triples into
-        $graph_name = self::$graph_name . $id;
+        if ($caching_necessary) {
 
-        // Serialise the triples into turtle
-        $ttl = $graph->serialise('turtle');
+            // Make the graph name to cache the triples into
+            $graph_name = self::$graph_name . $id;
 
-        // Parse the turlte into an ARC graph
-        $arc_parser = \ARC2::getTurtleParser();
+            // Serialise the triples into turtle
+            $ttl = $graph->serialise('turtle');
 
-        $ser = \ARC2::getNTriplesSerializer();
+            // Parse the turlte into an ARC graph
+            $arc_parser = \ARC2::getTurtleParser();
 
-        // Parse the turtle string
-        $arc_parser->parse('', $ttl);
+            $ser = \ARC2::getNTriplesSerializer();
 
-        // Serialize the triples again, this is because an EasyRdf_Graph has
-        // troubles with serializing unicode. The underlying bytes are
-        // not properly converted to utf8 characters by our serialize function
-        // A dump shows that all unicode encodings through serialization are the same (in easyrdf and arc)
-        // however when we convert the string (binary) into a utf8, only the arc2 serialization
-        // comes out correctly, hence something beneath the encoding (byte sequences?) must hold some wrongs.
-        $triples = $ser->getSerializedTriples($arc_parser->getTriples());
+            // Parse the turtle string
+            $arc_parser->parse('', $ttl);
 
-        preg_match_all("/(<.*\.)/", $triples, $matches);
+            // Serialize the triples again, this is because an EasyRdf_Graph has
+            // troubles with serializing unicode. The underlying bytes are
+            // not properly converted to utf8 characters by our serialize function
+            // A dump shows that all unicode encodings through serialization are the same (in easyrdf and arc)
+            // however when we convert the string (binary) into a utf8, only the arc2 serialization
+            // comes out correctly, hence something beneath the encoding (byte sequences?) must hold some wrongs.
+            $triples = $ser->getSerializedTriples($arc_parser->getTriples());
 
-        $triples_buffer = array();
+            preg_match_all("/(<.*\.)/", $triples, $matches);
 
-        if ($matches[0]) {
-            $triples_buffer = $matches[0];
+            $triples_buffer = array();
+
+            if ($matches[0]) {
+                $triples_buffer = $matches[0];
+            }
+
+            \Log::info("--------------- CACHING TRIPLES -------------------------");
+            \Log::info("Starting insertion of triples into the ARC2 RDF Store into the graph with the name " . $graph_name);
+
+            // Insert the triples in a chunked manner (not all triples at once)
+            $buffer_size = 20;
+
+            while (count($triples_buffer) >= $buffer_size) {
+
+                $triples_to_cache = array_slice($triples_buffer, 0, $buffer_size);
+
+                $this->addTriples($graph_name, $triples_to_cache, $store);
+
+                $triples_buffer = array_slice($triples_buffer, $buffer_size);
+            }
+
+            // Insert the last triples in the buffer
+            $this->addTriples($graph_name, $triples_buffer, $store);
+
+            \Log::info("--------------- DONE CACHING TRIPLES -------------------");
         }
-
-        \Log::info("--------------- CACHING TRIPLES -------------------------");
-        \Log::info("Starting insertion of triples into the ARC2 RDF Store into the graph with the name " . $graph_name);
-
-        // Insert the triples in a chunked manner (not all triples at once)
-        $buffer_size = 20;
-
-        while (count($triples_buffer) >= $buffer_size) {
-
-            $triples_to_cache = array_slice($triples_buffer, 0, $buffer_size);
-
-            $this->addTriples($graph_name, $triples_to_cache, $store);
-
-            $triples_buffer = array_slice($triples_buffer, $buffer_size);
-        }
-
-        // Insert the last triples in the buffer
-        $this->addTriples($graph_name, $triples_buffer, $store);
-
-        \Log::info("--------------- DONE CACHING TRIPLES -------------------");
     }
 
     /**
@@ -181,6 +183,8 @@ class TripleRepository implements TripleRepositoryInterface
         $triples_string = implode(' ', $triples);
 
         $serialized = $this->serialize($triples_string);
+
+        \Log::info("Inserting " . count($triples) . " triples into the triple store.");
 
         $query = $this->createInsertQuery($graph_name, $serialized);
 
@@ -401,6 +405,98 @@ class TripleRepository implements TripleRepositoryInterface
      */
     public function getCount($base_uri)
     {
+        $triples_amount = 0;
 
+        // Count the triples in our ARC2 store
+        $count_query = "select (count(?p) as ?count) WHERE { <$base_uri> ?p ?o. OPTIONAL {?o ?p1 ?o1. ?o1 ?p2 ?o3. }}";
+
+        $store = $this->setUpArc2Store();
+
+        $result = $store->query($count_query, 'raw');
+
+        $arc2_triples_count = $result['rows'][0]['count'];
+
+        $triples_amount += $arc2_triples_count;
+
+        // Count the triples in the sparql sources (these aren't cached in our store)
+        $sparql_repo = \App::make('Tdt\Triples\Repositories\Interfaces\SparqlSourceRepositoryInterface');
+
+        foreach ($sparql_repo->getAll() as $sparql_source) {
+
+            $endpoint = $sparql_source['endpoint'];
+            $pw = $sparql_source['endpoint_password'];
+            $user = $sparql_source['endpoint_user'];
+
+            $endpoint = rtrim($endpoint, '/');
+
+            $count_query = "select (count(*) AS ?count) WHERE { <$base_uri> ?p ?o. OPTIONAL {?o ?p1 ?o1. ?o1 ?p2 ?o3. }}";
+
+            $count_query = urlencode($count_query);
+            $count_query = str_replace("+", "%20", $count_query);
+
+            $query_uri = $endpoint . '?query=' . $count_query . '&format=' . urlencode("application/sparql-results+json");
+
+            $result = $this->executeUri($query_uri, $user, $pw);
+
+            $response = json_decode($result);
+
+            if (!empty($response)) {
+
+                $count = $response->results->bindings[0]->count->value;
+
+                $triples_amount += $count;
+            }
+        }
+
+        return $triples_amount;
+    }
+
+    /**
+     * Execute a query using cURL and return the result.
+     * This function will abort upon error.
+     */
+    private function executeUri($uri, $user = '', $password = '')
+    {
+        // Check if curl is installed on this machine
+        if (!function_exists('curl_init')) {
+            \App::abort(500, "cURL is not installed as an executable on this server, this is necessary to execute the SPARQL query properly.");
+        }
+
+        // Initiate the curl statement
+        $ch = curl_init();
+
+        // If credentials are given, put the HTTP auth header in the cURL request
+        if (!empty($user)) {
+
+            curl_setopt($ch, CURLOPT_HTTPAUTH, CURLAUTH_ANY);
+            curl_setopt($ch, CURLOPT_USERPWD, $user . ":" . $password);
+        }
+
+        // Set the request uri
+        curl_setopt($ch, CURLOPT_URL, $uri);
+
+        // Request for a string result instead of having the result being outputted
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+
+        // Execute the request
+        $response = curl_exec($ch);
+
+        if (!$response) {
+            $curl_err = curl_error($ch);
+            \Log::error("Something went wrong while executing a count sparql query. The request we put together was: $uri.");
+        }
+
+        $response_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+
+        // According to the SPARQL 1.1 spec, a SPARQL endpoint can only return 200,400,500 reponses
+        if ($response_code == '400') {
+            \Log::error("The SPARQL endpoint returned a 400 error. The error was: $response. The URI was: $uri");
+        } elseif ($response_code == '500') {
+            \Log::error("The SPARQL endpoint returned a 500 error. The URI was: $uri");
+        }
+
+        curl_close($ch);
+
+        return $response;
     }
 }

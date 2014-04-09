@@ -64,8 +64,8 @@ class SparqlSourceRepository extends BaseSourceRepository implements SparqlSourc
             ),
             'depth' => array(
                 'required' => false,
-                'name' => 'The depth that a URI can go to be a valid triple subject, so that it can be part of the collection of triples that are derefenced by the requested URI.',
-                'description' => 'Username of the user that has sufficient rights to query the sparql endpoint.',
+                'name' => 'Depth',
+                'description' => 'The depth that a URI can go to be a valid triple subject, so that it can be part of the collection of triples that are derefenced by the requested URI.',
                 'type' => 'integer',
                 'default_value' => 3
             ),

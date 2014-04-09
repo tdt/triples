@@ -44,7 +44,7 @@ interface SparqlSourceRepositoryInterface
      * @param integer $offset
      * @return array
      */
-    public function getAll($limit, $offset);
+    public function getAll($limit = 5000, $offset = 0);
 
     /**
      * Get all of the properties that are
