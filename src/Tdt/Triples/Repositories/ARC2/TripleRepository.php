@@ -1,6 +1,6 @@
 <?php
 
-namespace Tdt\Triples\Repositories;
+namespace Tdt\Triples\Repositories\ARC2;
 
 use Tdt\Triples\Repositories\Interfaces\TripleRepositoryInterface;
 use Tdt\Triples\Repositories\Interfaces\SemanticSourceRepositoryInterface;
@@ -174,7 +174,7 @@ class TripleRepository implements TripleRepositoryInterface
                 $configuration = array(
                     'uri' => $config['uri'],
                     'format' => 'turtle',
-                    );
+                );
 
                 $data = $rdf_reader->readData($configuration, array());
                 $graph = $data->data;
@@ -187,7 +187,7 @@ class TripleRepository implements TripleRepositoryInterface
                 $configuration = array(
                     'uri' => $config['uri'],
                     'format' => 'xml',
-                    );
+                );
 
                 $data = $rdf_reader->readData($configuration, array());
                 $graph = $data->data;
@@ -196,7 +196,6 @@ class TripleRepository implements TripleRepositoryInterface
             case 'sparql':
 
                 // Do nothing, the sparql endpoint is already optimized for read operations
-
                 $caching_necessary = false;
 
                 break;
@@ -252,12 +251,16 @@ class TripleRepository implements TripleRepositoryInterface
 
                 $triples_to_cache = array_slice($triples_buffer, 0, $buffer_size);
 
+                \Log::info("Caching " . count($triples_to_cache) . " triples into the store.");
+
                 $this->addTriples($graph_name, $triples_to_cache, $store);
 
                 $triples_buffer = array_slice($triples_buffer, $buffer_size);
             }
 
             // Insert the last triples in the buffer
+            \Log::info("Caching " . count($triples_buffer) . " triples into the store.");
+
             $this->addTriples($graph_name, $triples_buffer, $store);
 
             \Log::info("--------------- DONE CACHING TRIPLES -------------------");
@@ -373,7 +376,7 @@ class TripleRepository implements TripleRepositoryInterface
     {
         $graph_name = self::$graph_name . $id;
 
-        $delete_query = "DELETE {?s ?p ?o } FROM <" . $graph_name . '> { ?s ?p ?o}';
+        $delete_query = "DELETE FROM <$graph_name>";
 
         $store = $this->setUpArc2Store();
 

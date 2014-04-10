@@ -6,6 +6,7 @@ use Tdt\Triples\Repositories\Interfaces\SemanticSourceRepositoryInterface;
 use Tdt\Triples\Repositories\Interfaces\TripleRepositoryInterface;
 use Tdt\Core\ContentNegotiator;
 use Tdt\Core\Datasets\Data;
+use Tdt\Core\Auth\Auth;
 
 class TriplesController extends \Controller
 {
@@ -72,6 +73,9 @@ class TriplesController extends \Controller
      */
     public function post()
     {
+        // Use the core permissions for now to allow creation
+        Auth::requirePermissions('dataset.create');
+
         // Retrieve the input from the request.
         $input = $this->fetchInput();
 
@@ -94,6 +98,9 @@ class TriplesController extends \Controller
 
     public function put($id)
     {
+        // Use the core package's authentication for now
+        Auth::requirePermissions('dataset.create');
+
         $input = $this->fetchInput();
 
         $result = $this->semantic_source->update($id, $input);
@@ -123,6 +130,8 @@ class TriplesController extends \Controller
      */
     public function delete($id)
     {
+        Auth::requirePermissions('dataset.delete');
+
         $result = $this->semantic_source->delete($id);
 
         // Delete the corresponding graph that cached the triples

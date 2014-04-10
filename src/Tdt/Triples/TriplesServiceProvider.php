@@ -45,7 +45,7 @@ class TriplesServiceProvider extends ServiceProvider
 
         $this->app->bind(
             'Tdt\Triples\Repositories\Interfaces\TripleRepositoryInterface',
-            'Tdt\Triples\Repositories\TripleRepository'
+            'Tdt\Triples\Repositories\ARC2\TripleRepository'
         );
 
         $this->app->bind(

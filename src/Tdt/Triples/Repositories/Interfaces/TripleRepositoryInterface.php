@@ -2,6 +2,12 @@
 
 namespace Tdt\Triples\Repositories\Interfaces;
 
+/**
+ * Implementations of this interface should manage the
+ * semantic source that are stored in this package.
+ * This means caching, fetching, deleting, etc. triples stored
+ * in the various semantic sources stored in the package.
+ */
 interface TripleRepositoryInterface
 {
     /**
