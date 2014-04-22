@@ -498,47 +498,9 @@ class TripleRepository implements TripleRepositoryInterface
     {
         $graph = new \EasyRdf_Graph();
 
-        //dd($result);
+        $store = $this->setUpArc2Store();
 
-        $triples_buffer = array();
-
-        // Build a string out of the result, we know it's always 3 levels deep
-        $ttl_string = '';
-
-        foreach ($result as $s => $p_arr) {
-
-            foreach ($p_arr as $p => $o_arr) {
-
-                $triple_string = '<' . $s . '> ';
-
-                if (filter_var($p, FILTER_VALIDATE_URL) === false) {
-                    $triple_string .= $p . ' ';
-                } else {
-                    $triple_string .= '<' . $p . '> ';
-                }
-
-                foreach ($o_arr as $key => $val) {
-
-                    $triple = $triple_string;
-
-                    if ($val['type'] == "uri") {
-                        $triple .= '<' . $val['value'] . '> .';
-                    } else { //literal
-                        if (!empty($val['lang'])) {
-                            $triple .= '"' . $val['value'] . '"@' . $val['lang'] . '.';
-                        } else if (!empty($val['datatype'])) {
-                            $triple .= '"' . $val['value'] . '"^^<' . $val['datatype'] . '>.';
-                        } else { // Blank node
-                            $triple .= ' ' . $val['value'] . '.';
-                        }
-                    }
-
-                    array_push($triples_buffer, $triple);
-                }
-            }
-        }
-
-        $ttl_string = implode(' ', $triples_buffer);
+        $ttl_string = $store->toNTriples($result);
 
         $parser = new \EasyRdf_Parser_Turtle();
 
