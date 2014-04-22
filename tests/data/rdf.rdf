@@ -1,0 +1,444 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+  xmlns:ns0="http://schema.org/"
+  xmlns:ns1="http://purl.org/dc/terms/"
+  xmlns:ns2="http://westtoer.be/voc/"
+  xmlns:ns3="http://purl.org/acco/ns#">
+
+  <rdf:Description rdf:about="http://triples.test/json/crime">
+    <rdf:type rdf:resource="http://purl.org/acco/ns#Accommodation"/>
+    <ns1:identifier>1256</ns1:identifier>
+    <ns0:name>Value Stay Brugge</ns0:name>
+    <ns0:telephone>+32 495 29 38 47</ns0:telephone>
+    <ns2:type>hotel</ns2:type>
+    <ns0:email>kj@be-housing.be</ns0:email>
+    <ns3:feature rdf:resource="https://triples.test/WIN/Logies/VacationResidence/26220"/>
+    <ns2:win_databank_id>26220</ns2:win_databank_id>
+    <ns0:url>http://www.be-housing.be</ns0:url>
+  </rdf:Description>
+
+  <rdf:Description rdf:about="https://triples.test/WIN/Logies/1308">
+    <rdf:type rdf:resource="http://purl.org/acco/ns#Accommodation"/>
+    <ns0:location rdf:resource="https://triples.test/WIN/Logies/location/51.1713790,3.2026219"/>
+    <ns1:identifier>1308</ns1:identifier>
+    <ns0:name>Leonardo Hotel Brugge</ns0:name>
+    <ns0:telephone>+32 50 40 21 40</ns0:telephone>
+    <ns2:type>hotel</ns2:type>
+    <ns0:email>info.brugge@leonardo-hotels.com</ns0:email>
+    <ns3:feature rdf:resource="https://triples.test/WIN/Logies/VacationResidence/26221"/>
+    <ns2:win_databank_id>26221</ns2:win_databank_id>
+    <ns0:url>http://www.leonardo-hotels.com</ns0:url>
+    <ns2:booking-uri>http://www.leonardo-hotels.com</ns2:booking-uri>
+    <ns0:faxNumber>+32 50 40 21 41</ns0:faxNumber>
+  </rdf:Description>
+
+  <rdf:Description rdf:about="https://triples.test/WIN/Logies/1320">
+    <rdf:type rdf:resource="http://purl.org/acco/ns#Accommodation"/>
+    <ns0:location rdf:resource="https://triples.test/WIN/Logies/location/51.3026682,3.2992608"/>
+    <ns1:identifier>1320</ns1:identifier>
+    <ns0:name>Ter Zaele</ns0:name>
+    <ns0:telephone>+32 50 60 12 37</ns0:telephone>
+    <ns2:type>hotel</ns2:type>
+    <ns0:email>terzaele@skynet.be</ns0:email>
+    <ns3:feature rdf:resource="https://triples.test/WIN/Logies/VacationResidence/26236"/>
+    <ns2:win_databank_id>26236</ns2:win_databank_id>
+    <ns0:url>http://www.hotelterzaele.be</ns0:url>
+    <ns2:booking-uri>http://booking.dekust.be/check_availability.aspx?lang=nl&amp;logisid=524</ns2:booking-uri>
+    <ns0:faxNumber>+32 50 61 19 73</ns0:faxNumber>
+  </rdf:Description>
+
+  <rdf:Description rdf:about="https://triples.test/WIN/Logies/1313">
+    <rdf:type rdf:resource="http://purl.org/acco/ns#Accommodation"/>
+    <ns0:location rdf:resource="https://triples.test/WIN/Logies/location/51.2874583,3.3278964"/>
+    <ns1:identifier>1313</ns1:identifier>
+    <ns0:name>Welkom</ns0:name>
+    <ns0:telephone>+32 50 60 24 92</ns0:telephone>
+    <ns2:type>hotel</ns2:type>
+    <ns0:email>info@hotelwelkom.be</ns0:email>
+    <ns3:feature rdf:resource="https://triples.test/WIN/Logies/VacationResidence/26261"/>
+    <ns2:win_databank_id>26261</ns2:win_databank_id>
+    <ns0:url>http://www.hotelwelkom.be</ns0:url>
+    <ns2:booking-uri>http://www.securereservations.eu/select_dates.aspx?logisid=330&amp;vvv=westtoer&amp;booktemplate=1&amp;taal=nl</ns2:booking-uri>
+    <ns0:faxNumber>+32 50 62 30 31</ns0:faxNumber>
+  </rdf:Description>
+
+  <rdf:Description rdf:about="https://triples.test/WIN/Logies/1311">
+    <rdf:type rdf:resource="http://purl.org/acco/ns#Accommodation"/>
+    <ns0:location rdf:resource="https://triples.test/WIN/Logies/location/51.2038572,3.3606893"/>
+    <ns1:identifier>1311</ns1:identifier>
+    <ns0:name>Logis Rostune</ns0:name>
+    <ns0:telephone>+32 50 35 39 42</ns0:telephone>
+    <ns2:type>hotel</ns2:type>
+    <ns0:email>logis@rostune.be</ns0:email>
+    <ns3:feature rdf:resource="https://triples.test/WIN/Logies/VacationResidence/26262"/>
+    <ns2:win_databank_id>26262</ns2:win_databank_id>
+    <ns0:url>http://www.rostune.be</ns0:url>
+    <ns0:faxNumber>+32 50 35 68 55</ns0:faxNumber>
+  </rdf:Description>
+
+  <rdf:Description rdf:about="https://triples.test/WIN/Logies/1033">
+    <rdf:type rdf:resource="http://purl.org/acco/ns#Accommodation"/>
+    <ns0:location rdf:resource="https://triples.test/WIN/Logies/location/51.3160427,3.1308819"/>
+    <ns1:identifier>1033</ns1:identifier>
+    <ns0:name>Malecot Boutique Hotel</ns0:name>
+    <ns0:telephone>+32 50 41 12 07</ns0:telephone>
+    <ns2:type>hotel</ns2:type>
+    <ns0:email>malecot@vakantiehotels.be</ns0:email>
+    <ns3:feature rdf:resource="https://triples.test/WIN/Logies/VacationResidence/26283"/>
+    <ns2:win_databank_id>26283</ns2:win_databank_id>
+    <ns0:url>http://www.malecothotel.be</ns0:url>
+    <ns2:booking-uri>http://booking.dekust.be/select_dates?logisid=578&amp;lang=nl</ns2:booking-uri>
+    <ns0:faxNumber>+32 50 42 80 42</ns0:faxNumber>
+  </rdf:Description>
+
+  <rdf:Description rdf:about="https://triples.test/WIN/Logies/1032">
+    <rdf:type rdf:resource="http://purl.org/acco/ns#Accommodation"/>
+    <ns0:location rdf:resource="https://triples.test/WIN/Logies/location/51.3140458,3.1272502"/>
+    <ns1:identifier>1032</ns1:identifier>
+    <ns0:name>Du Commerce</ns0:name>
+    <ns0:telephone>+32 50 42 95 35</ns0:telephone>
+    <ns2:type>hotel</ns2:type>
+    <ns0:email>info@hotel-du-commerce.be</ns0:email>
+    <ns3:feature rdf:resource="https://triples.test/WIN/Logies/VacationResidence/26287"/>
+    <ns2:win_databank_id>26287</ns2:win_databank_id>
+    <ns0:url>http://www.hotel-du-commerce.be</ns0:url>
+    <ns2:booking-uri>http://booking.dekust.be/check_availability.aspx?lang=nl&amp;logisid=582</ns2:booking-uri>
+    <ns0:faxNumber>+32 50 42 94 40</ns0:faxNumber>
+  </rdf:Description>
+
+  <rdf:Description rdf:about="https://triples.test/WIN/Logies/1030">
+    <rdf:type rdf:resource="http://purl.org/acco/ns#Accommodation"/>
+    <ns0:location rdf:resource="https://triples.test/WIN/Logies/location/51.3154095,3.1333483"/>
+    <ns1:identifier>1030</ns1:identifier>
+    <ns0:name>Avenue Boutique Hotel</ns0:name>
+    <ns0:telephone>+32 50 41 12 75</ns0:telephone>
+    <ns2:type>hotel</ns2:type>
+    <ns0:email>avenue@vakantiehotels.be</ns0:email>
+    <ns3:feature rdf:resource="https://triples.test/WIN/Logies/VacationResidence/26289"/>
+    <ns2:win_databank_id>26289</ns2:win_databank_id>
+    <ns0:url>http://www.avenuehotel.be</ns0:url>
+    <ns2:booking-uri>http://booking.dekust.be/select_dates?logisid=584&amp;lang=nl</ns2:booking-uri>
+    <ns0:faxNumber>+32 50 41 99 92</ns0:faxNumber>
+  </rdf:Description>
+
+  <rdf:Description rdf:about="https://triples.test/WIN/Logies/1026">
+    <rdf:type rdf:resource="http://purl.org/acco/ns#Accommodation"/>
+    <ns0:location rdf:resource="https://triples.test/WIN/Logies/location/51.3151057,3.1229715"/>
+    <ns1:identifier>1026</ns1:identifier>
+    <ns0:name>Helios Hotel</ns0:name>
+    <ns0:telephone>+32 50 42 90 20</ns0:telephone>
+    <ns2:type>hotel</ns2:type>
+    <ns0:email>info@hotelhelios.be</ns0:email>
+    <ns3:feature rdf:resource="https://triples.test/WIN/Logies/VacationResidence/26291"/>
+    <ns2:win_databank_id>26291</ns2:win_databank_id>
+    <ns0:url>http://www.hotelhelios.be</ns0:url>
+    <ns2:booking-uri>http://booking.dekust.be/check_availability.aspx?lang=nl&amp;logisid=586</ns2:booking-uri>
+    <ns0:faxNumber>+32 50 42 86 66</ns0:faxNumber>
+    <ns0:embedUrl>http://www.hotelhelios.be/helios-hotel-blankenberge-video.asp?taal=nl</ns0:embedUrl>
+  </rdf:Description>
+
+  <rdf:Description rdf:about="https://triples.test/WIN/Logies/1027">
+    <rdf:type rdf:resource="http://purl.org/acco/ns#Accommodation"/>
+    <ns0:location rdf:resource="https://triples.test/WIN/Logies/location/51.3125377,3.1281227"/>
+    <ns1:identifier>1027</ns1:identifier>
+    <ns0:name>Best Western Hotel Richmond</ns0:name>
+    <ns0:telephone>+32 475 79 40 98</ns0:telephone>
+    <ns0:telephone>+32 50 42 96 92</ns0:telephone>
+    <ns2:type>hotel</ns2:type>
+    <ns0:email>info@hotelrichmond.be</ns0:email>
+    <ns3:feature rdf:resource="https://triples.test/WIN/Logies/VacationResidence/26294"/>
+    <ns2:win_databank_id>26294</ns2:win_databank_id>
+    <ns0:url>http://www.hotelrichmond.be</ns0:url>
+    <ns2:booking-uri>http://booking.dekust.be/select_dates?logisid=589&amp;lang=nl</ns2:booking-uri>
+    <ns0:faxNumber>+32 50 42 98 72</ns0:faxNumber>
+  </rdf:Description>
+
+  <rdf:Description rdf:about="https://triples.test/WIN/Logies/1028">
+    <rdf:type rdf:resource="http://purl.org/acco/ns#Accommodation"/>
+    <ns0:location rdf:resource="https://triples.test/WIN/Logies/location/51.3153713,3.1294328"/>
+    <ns1:identifier>1028</ns1:identifier>
+    <ns0:name>Saint Sauveur</ns0:name>
+    <ns0:telephone>+32 50 42 70 00</ns0:telephone>
+    <ns2:type>hotel</ns2:type>
+    <ns0:email>hotel@saintsauveur.be</ns0:email>
+    <ns3:feature rdf:resource="https://triples.test/WIN/Logies/VacationResidence/26297"/>
+    <ns2:win_databank_id>26297</ns2:win_databank_id>
+    <ns0:url>http://www.saintsauveur.be</ns0:url>
+    <ns2:booking-uri>http://booking.dekust.be/check_availability.aspx?lang=nl&amp;logisid=592</ns2:booking-uri>
+    <ns0:faxNumber>+32 50 42 97 38</ns0:faxNumber>
+  </rdf:Description>
+
+  <rdf:Description rdf:about="https://triples.test/WIN/Logies/1029">
+    <rdf:type rdf:resource="http://purl.org/acco/ns#Accommodation"/>
+    <ns0:location rdf:resource="https://triples.test/WIN/Logies/location/51.3138052,3.1308862"/>
+    <ns1:identifier>1029</ns1:identifier>
+    <ns0:name>Alfa Inn</ns0:name>
+    <ns0:telephone>+32 50 41 81 72</ns0:telephone>
+    <ns0:telephone>+32 475 39 60 98</ns0:telephone>
+    <ns2:type>hotel</ns2:type>
+    <ns0:email>info@alfa-inn.com</ns0:email>
+    <ns3:feature rdf:resource="https://triples.test/WIN/Logies/VacationResidence/26299"/>
+    <ns2:win_databank_id>26299</ns2:win_databank_id>
+    <ns0:url>http://www.alfa-inn.com</ns0:url>
+    <ns2:booking-uri>http://booking.dekust.be/check_availability.aspx?lang=nl&amp;logisid=594</ns2:booking-uri>
+    <ns0:faxNumber>+32 50 42 93 24</ns0:faxNumber>
+  </rdf:Description>
+
+  <rdf:Description rdf:about="https://triples.test/WIN/Logies/1255">
+    <rdf:type rdf:resource="http://purl.org/acco/ns#Accommodation"/>
+    <ns0:location rdf:resource="https://triples.test/WIN/Logies/location/51.2787894,3.2474078"/>
+    <ns1:identifier>1255</ns1:identifier>
+    <ns0:name>Bloemenhof</ns0:name>
+    <ns0:telephone>+32 50 59 81 34</ns0:telephone>
+    <ns0:telephone>+32 473 36 22 43</ns0:telephone>
+    <ns2:type>hotel</ns2:type>
+    <ns0:email>info@hetbloemenhof.be</ns0:email>
+    <ns3:feature rdf:resource="https://triples.test/WIN/Logies/VacationResidence/26303"/>
+    <ns2:win_databank_id>26303</ns2:win_databank_id>
+    <ns0:url>http://www.hetbloemenhof.be</ns0:url>
+    <ns2:booking-uri>http://www.hetbloemenhof.be/</ns2:booking-uri>
+    <ns0:faxNumber>+32 50 59 84 28</ns0:faxNumber>
+  </rdf:Description>
+
+  <rdf:Description rdf:about="https://triples.test/WIN/Logies/1314">
+    <rdf:type rdf:resource="http://purl.org/acco/ns#Accommodation"/>
+    <ns0:location rdf:resource="https://triples.test/WIN/Logies/location/51.1559466,2.9663954"/>
+    <ns1:identifier>1314</ns1:identifier>
+    <ns0:name>Ten Putte</ns0:name>
+    <ns0:telephone>+32 59 27 70 44</ns0:telephone>
+    <ns2:type>hotel</ns2:type>
+    <ns0:email>hotel@tenputte.be</ns0:email>
+    <ns3:feature rdf:resource="https://triples.test/WIN/Logies/VacationResidence/26398"/>
+    <ns2:win_databank_id>26398</ns2:win_databank_id>
+    <ns0:url>http://www.tenputte.be</ns0:url>
+    <ns2:booking-uri>http://www.securereservations.eu/select_dates.aspx?logisid=173&amp;vvv=westtoer&amp;booktemplate=1&amp;taal=nl</ns2:booking-uri>
+    <ns0:faxNumber>+32 59 27 35 03</ns0:faxNumber>
+  </rdf:Description>
+
+  <rdf:Description rdf:about="https://triples.test/WIN/Logies/1317">
+    <rdf:type rdf:resource="http://purl.org/acco/ns#Accommodation"/>
+    <ns0:location rdf:resource="https://triples.test/WIN/Logies/location/51.1820693,3.1133681"/>
+    <ns1:identifier>1317</ns1:identifier>
+    <ns0:name>Haeneveld</ns0:name>
+    <ns0:telephone>+32 477 47 59 12</ns0:telephone>
+    <ns0:telephone>+32 50 81 27 00</ns0:telephone>
+    <ns2:type>hotel</ns2:type>
+    <ns0:email>info@haeneveld.be</ns0:email>
+    <ns3:feature rdf:resource="https://triples.test/WIN/Logies/VacationResidence/26400"/>
+    <ns2:win_databank_id>26400</ns2:win_databank_id>
+    <ns0:url>http://www.haeneveld.be</ns0:url>
+    <ns2:booking-uri>http://www.securereservations.eu/select_dates.aspx?logisid=120&amp;vvv=westtoer&amp;booktemplate=1&amp;taal=nl</ns2:booking-uri>
+    <ns0:faxNumber>+32 50 81 12 77</ns0:faxNumber>
+  </rdf:Description>
+
+  <rdf:Description rdf:about="https://triples.test/WIN/Logies/1316">
+    <rdf:type rdf:resource="http://purl.org/acco/ns#Accommodation"/>
+    <ns0:location rdf:resource="https://triples.test/WIN/Logies/location/51.1807291,3.0981677"/>
+    <ns1:identifier>1316</ns1:identifier>
+    <ns0:name>Carpe Diem</ns0:name>
+    <ns0:telephone>+32 50 81 42 42</ns0:telephone>
+    <ns0:telephone>+32 475 51 76 45</ns0:telephone>
+    <ns2:type>hotel</ns2:type>
+    <ns0:email>mail@hotelcarpediem.be</ns0:email>
+    <ns3:feature rdf:resource="https://triples.test/WIN/Logies/VacationResidence/26401"/>
+    <ns2:win_databank_id>26401</ns2:win_databank_id>
+    <ns0:url>http://www.hotelcarpediem.be</ns0:url>
+    <ns0:faxNumber>+32 50 81 42 42</ns0:faxNumber>
+  </rdf:Description>
+
+  <rdf:Description rdf:about="https://triples.test/WIN/Logies/1319">
+    <rdf:type rdf:resource="http://purl.org/acco/ns#Accommodation"/>
+    <ns0:location rdf:resource="https://triples.test/WIN/Logies/location/51.2102496,3.1909803"/>
+    <ns0:location rdf:resource="https://triples.test/WIN/Logies/location/51.1833790,3.0946255"/>
+    <ns1:identifier>1319</ns1:identifier>
+    <ns0:name>Hove Ter Hille</ns0:name>
+    <ns0:telephone>+32 50 81 11 97</ns0:telephone>
+    <ns0:telephone>+32 475 27 51 58</ns0:telephone>
+    <ns2:type>vakantiewoning</ns2:type>
+    <ns2:type>hotel</ns2:type>
+    <ns0:email>info@hove-ter-hille.be</ns0:email>
+    <ns0:email>info@Hove-ter-Hille.be</ns0:email>
+    <ns3:feature rdf:resource="https://triples.test/WIN/Logies/VacationResidence/27655"/>
+    <ns3:feature rdf:resource="https://triples.test/WIN/Logies/VacationResidence/26402"/>
+    <ns2:win_databank_id>27655</ns2:win_databank_id>
+    <ns2:win_databank_id>26402</ns2:win_databank_id>
+    <ns0:url>http://www.Hove-ter-Hille.be</ns0:url>
+    <ns0:url>http://www.hove-ter-hille.be</ns0:url>
+    <ns0:faxNumber>+32 50 81 45 17</ns0:faxNumber>
+  </rdf:Description>
+
+  <rdf:Description rdf:about="https://triples.test/WIN/Logies/1253">
+    <rdf:type rdf:resource="http://purl.org/acco/ns#Accommodation"/>
+    <ns0:location rdf:resource="https://triples.test/WIN/Logies/location/51.1171412,3.3217563"/>
+    <ns1:identifier>1253</ns1:identifier>
+    <ns0:name>Hostellerie Ten Lande</ns0:name>
+    <ns0:telephone>+32 50 79 10 00</ns0:telephone>
+    <ns2:type>hotel</ns2:type>
+    <ns0:email>hotel-restaurant@tenlande.be</ns0:email>
+    <ns3:feature rdf:resource="https://triples.test/WIN/Logies/VacationResidence/26487"/>
+    <ns2:win_databank_id>26487</ns2:win_databank_id>
+    <ns0:url>http://www.tenlande.be</ns0:url>
+    <ns2:booking-uri>http://www.securereservations.eu/select_dates.aspx?logisid=130&amp;vvv=westtoer&amp;booktemplate=1&amp;taal=nl</ns2:booking-uri>
+  </rdf:Description>
+
+  <rdf:Description rdf:about="https://triples.test/WIN/Logies/1321">
+    <rdf:type rdf:resource="http://purl.org/acco/ns#Accommodation"/>
+    <ns0:location rdf:resource="https://triples.test/WIN/Logies/location/51.0029314,3.1546316"/>
+    <ns1:identifier>1321</ns1:identifier>
+    <ns0:name>Bouckenhove</ns0:name>
+    <ns0:telephone>+32 51 72 25 78</ns0:telephone>
+    <ns0:telephone>+32 497 36 79 92</ns0:telephone>
+    <ns2:type>gastenkamer</ns2:type>
+    <ns0:email>info@bouckennest.be</ns0:email>
+    <ns3:feature rdf:resource="https://triples.test/WIN/Logies/VacationResidence/27448"/>
+    <ns2:win_databank_id>27448</ns2:win_databank_id>
+    <ns0:url>http://www.bouckennest.be</ns0:url>
+    <ns0:faxNumber>+32 51 72 25 78</ns0:faxNumber>
+  </rdf:Description>
+
+  <rdf:Description rdf:about="https://triples.test/WIN/Logies/1310">
+    <rdf:type rdf:resource="http://purl.org/acco/ns#Accommodation"/>
+    <ns0:location rdf:resource="https://triples.test/WIN/Logies/location/51.2033106,3.2054953"/>
+    <ns1:identifier>1310</ns1:identifier>
+    <ns0:name>Pannenhuis</ns0:name>
+    <ns0:telephone>+32 50 31 19 07</ns0:telephone>
+    <ns2:type>hotel</ns2:type>
+    <ns0:email>hostellerie@pannenhuis.be</ns0:email>
+    <ns3:feature rdf:resource="https://triples.test/WIN/Logies/VacationResidence/26216"/>
+    <ns2:win_databank_id>26216</ns2:win_databank_id>
+    <ns0:url>http://www.pannenhuis.be</ns0:url>
+    <ns2:booking-uri>http://www.securereservations.eu/select_dates.aspx?logisid=438&amp;vvv=westtoer&amp;booktemplate=1&amp;taal=nl</ns2:booking-uri>
+  </rdf:Description>
+
+  <rdf:Description rdf:about="https://triples.test/WIN/Logies/1309">
+    <rdf:type rdf:resource="http://purl.org/acco/ns#Accommodation"/>
+    <ns0:location rdf:resource="https://triples.test/WIN/Logies/location/51.2007268,3.2070649"/>
+    <ns1:identifier>1309</ns1:identifier>
+    <ns0:name>Olympia</ns0:name>
+    <ns0:telephone>+32 50 39 05 78</ns0:telephone>
+    <ns2:type>hotel</ns2:type>
+    <ns0:email>info@hotelolympia.be</ns0:email>
+    <ns3:feature rdf:resource="https://triples.test/WIN/Logies/VacationResidence/26218"/>
+    <ns2:win_databank_id>26218</ns2:win_databank_id>
+    <ns0:url>http://www.hotelolympia.be</ns0:url>
+    <ns2:booking-uri>http://www.securereservations.eu/select_dates.aspx?logisid=327&amp;vvv=westtoer&amp;booktemplate=1&amp;taal=nl</ns2:booking-uri>
+    <ns0:faxNumber>+32 50 39 01 13</ns0:faxNumber>
+  </rdf:Description>
+
+  <rdf:Description rdf:about="https://triples.test/WIN/Logies/1257">
+    <rdf:type rdf:resource="http://purl.org/acco/ns#Accommodation"/>
+    <ns0:location rdf:resource="https://triples.test/WIN/Logies/location/51.2000321,3.2443196"/>
+    <ns1:identifier>1257</ns1:identifier>
+    <ns0:name>Gasthof Groenhove</ns0:name>
+    <ns0:telephone>+32 50 37 34 44</ns0:telephone>
+    <ns0:telephone>+32 485 44 15 51</ns0:telephone>
+    <ns2:type>hotel</ns2:type>
+    <ns0:email>hotel@groenhove.com</ns0:email>
+    <ns3:feature rdf:resource="https://triples.test/WIN/Logies/VacationResidence/26255"/>
+    <ns2:win_databank_id>26255</ns2:win_databank_id>
+    <ns0:url>http://www.groenhove.com</ns0:url>
+    <ns2:booking-uri>http://www.securereservations.eu/select_dates.aspx?logisid=232&amp;vvv=westtoer&amp;booktemplate=1&amp;taal=nl</ns2:booking-uri>
+    <ns0:faxNumber>+32 50 37 44 84</ns0:faxNumber>
+  </rdf:Description>
+
+  <rdf:Description rdf:about="https://triples.test/WIN/Logies/1259">
+    <rdf:type rdf:resource="http://purl.org/acco/ns#Accommodation"/>
+    <ns0:location rdf:resource="https://triples.test/WIN/Logies/location/51.2123935,3.2689639"/>
+    <ns1:identifier>1259</ns1:identifier>
+    <ns0:name>Lodewijk Van Male</ns0:name>
+    <ns0:telephone>+32 50 35 57 63</ns0:telephone>
+    <ns2:type>hotel</ns2:type>
+    <ns0:email>info@lodewijkvanmale.be</ns0:email>
+    <ns3:feature rdf:resource="https://triples.test/WIN/Logies/VacationResidence/26257"/>
+    <ns2:win_databank_id>26257</ns2:win_databank_id>
+    <ns0:url>http://www.lodewijkvanmale.be</ns0:url>
+    <ns2:booking-uri>http://www.securereservations.eu/select_dates.aspx?logisid=128&amp;vvv=westtoer&amp;booktemplate=1&amp;taal=nl</ns2:booking-uri>
+    <ns0:faxNumber>+32 50 37 06 26</ns0:faxNumber>
+  </rdf:Description>
+
+  <rdf:Description rdf:about="https://triples.test/WIN/Logies/1190">
+    <rdf:type rdf:resource="http://purl.org/acco/ns#Accommodation"/>
+    <ns0:location rdf:resource="https://triples.test/WIN/Logies/location/51.0043548,3.6023026"/>
+    <ns1:identifier>1190</ns1:identifier>
+    <ns0:name>Auberge du Pêcheur</ns0:name>
+    <ns0:telephone>+32 9 282 31 44</ns0:telephone>
+    <ns2:type>hotel</ns2:type>
+    <ns0:email>info@auberge-du-pecheur.be</ns0:email>
+    <ns3:feature rdf:resource="https://triples.test/WIN/Logies/VacationResidence/27293"/>
+    <ns2:win_databank_id>27293</ns2:win_databank_id>
+    <ns0:url>http://www.auberge-du-pecheur.be</ns0:url>
+    <ns0:faxNumber>+32 9 282 90 58</ns0:faxNumber>
+  </rdf:Description>
+
+  <rdf:Description rdf:about="https://triples.test/WIN/Logies/1241">
+    <rdf:type rdf:resource="http://purl.org/acco/ns#Accommodation"/>
+    <ns0:location rdf:resource="https://triples.test/WIN/Logies/location/51.0040787,3.6022910"/>
+    <ns1:identifier>1241</ns1:identifier>
+    <ns0:name>Latem House</ns0:name>
+    <ns0:telephone>+32 9 282 31 44</ns0:telephone>
+    <ns2:type>hotel</ns2:type>
+    <ns0:email>info@auberge-du-pecheur.be</ns0:email>
+    <ns3:feature rdf:resource="https://triples.test/WIN/Logies/VacationResidence/27294"/>
+    <ns2:win_databank_id>27294</ns2:win_databank_id>
+    <ns0:url>http://www.auberge-du-pecheur.be</ns0:url>
+    <ns0:faxNumber>+32 9 282 90 58</ns0:faxNumber>
+  </rdf:Description>
+
+  <rdf:Description rdf:about="https://triples.test/WIN/Logies/1242">
+    <rdf:type rdf:resource="http://purl.org/acco/ns#Accommodation"/>
+    <ns0:location rdf:resource="https://triples.test/WIN/Logies/location/51.0046418,3.6024358"/>
+    <ns1:identifier>1242</ns1:identifier>
+    <ns0:name>Deurle House</ns0:name>
+    <ns0:telephone>+32 9 282 31 44</ns0:telephone>
+    <ns2:type>hotel</ns2:type>
+    <ns0:email>info@auberge-du-pecheur.be</ns0:email>
+    <ns3:feature rdf:resource="https://triples.test/WIN/Logies/VacationResidence/27295"/>
+    <ns2:win_databank_id>27295</ns2:win_databank_id>
+    <ns0:url>http://www.auberge-du-pecheur.be</ns0:url>
+    <ns0:faxNumber>+32 9 282 90 58</ns0:faxNumber>
+  </rdf:Description>
+
+  <rdf:Description rdf:about="https://triples.test/WIN/Logies/1260">
+    <rdf:type rdf:resource="http://purl.org/acco/ns#Accommodation"/>
+    <ns0:location rdf:resource="https://triples.test/WIN/Logies/location/51.0058947,3.6038041"/>
+    <ns1:identifier>1260</ns1:identifier>
+    <ns0:name>In 't Boldershof</ns0:name>
+    <ns0:telephone>+32 475 59 01 86</ns0:telephone>
+    <ns0:telephone>+32 9 282 75 45</ns0:telephone>
+    <ns2:type>hotel</ns2:type>
+    <ns0:email>info@boldershof.com</ns0:email>
+    <ns3:feature rdf:resource="https://triples.test/WIN/Logies/VacationResidence/27296"/>
+    <ns2:win_databank_id>27296</ns2:win_databank_id>
+    <ns0:url>http://www.boldershof.com</ns0:url>
+    <ns0:faxNumber>+32 9 282 93 28</ns0:faxNumber>
+  </rdf:Description>
+
+  <rdf:Description rdf:about="https://triples.test/WIN/Logies/1263">
+    <rdf:type rdf:resource="http://purl.org/acco/ns#Accommodation"/>
+    <ns0:location rdf:resource="https://triples.test/WIN/Logies/location/50.9606110,3.5984680"/>
+    <ns1:identifier>1263</ns1:identifier>
+    <ns0:name>Nazareth</ns0:name>
+    <ns0:telephone>+32 9 385 60 83</ns0:telephone>
+    <ns2:type>hotel</ns2:type>
+    <ns0:email>info@hotelnazareth.be</ns0:email>
+    <ns3:feature rdf:resource="https://triples.test/WIN/Logies/VacationResidence/27297"/>
+    <ns2:win_databank_id>27297</ns2:win_databank_id>
+    <ns0:url>http://www.hotelnazareth.be</ns0:url>
+    <ns0:faxNumber>+32 9 385 70 43</ns0:faxNumber>
+  </rdf:Description>
+
+  <rdf:Description rdf:about="https://triples.test/WIN/Logies/1280">
+    <rdf:type rdf:resource="http://purl.org/acco/ns#Accommodation"/>
+    <ns0:location rdf:resource="https://triples.test/WIN/Logies/location/51.0253296,3.6235443"/>
+    <ns1:identifier>1280</ns1:identifier>
+    <ns0:name>Torenhof</ns0:name>
+    <ns0:telephone>+32 9 282 33 20</ns0:telephone>
+    <ns2:type>hotel</ns2:type>
+    <ns0:email>torenhof@torenhof.be</ns0:email>
+    <ns3:feature rdf:resource="https://triples.test/WIN/Logies/VacationResidence/27298"/>
+    <ns2:win_databank_id>27298</ns2:win_databank_id>
+    <ns0:url>http://www.torenhof.be</ns0:url>
+    <ns0:faxNumber>+32 9 282 00 62</ns0:faxNumber>
+  </rdf:Description>
+
+</rdf:RDF>

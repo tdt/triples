@@ -1,0 +1,381 @@
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix gml: <http://www.opengis.net/gml/> .
+@prefix dbo: <http://dbpedia.org/ontology/> .
+@prefix schema: <http://schema.org/> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix dbp: <http://dbpedia.org/property/> .
+
+<http://triples.test/resource/Mortsel-Deurnesteenweg_railway_station> rdf:type owl:Thing ,
+                                                                              gml:_Feature ,
+                                                                              dbo:Place ,
+                                                                              dbo:Wikidata:Q532 ,
+                                                                              schema:Place ,
+                                                                              dbo:ArchitecturalStructure ,
+                                                                              dbo:Station ,
+                                                                              dbo:Infrastructure ;
+                                                                     rdfs:label "42"^^<http://www.w3.org/2001/XMLSchema#integer> ;
+                                                                     owl:sameAs <http://www.wikidata.org/entity/Q2846639> ,
+                                                                                <http://nl.dbpedia.org/resource/Station_Mortsel-Deurnesteenweg> .
+
+<http://triples.test/resource/Mortsel-Liersesteenweg_railway_station> rdf:type gml:_Feature ,
+                                                                              dbo:Infrastructure ,
+                                                                              dbo:ArchitecturalStructure ,
+                                                                              dbo:Wikidata:Q532 ,
+                                                                              schema:Place ,
+                                                                              owl:Thing ,
+                                                                              dbo:Place ,
+                                                                              dbo:Station ;
+                                                                     rdfs:label "Mortsel-Liersesteenweg railway station"@en ;
+                                                                     owl:sameAs <http://www.wikidata.org/entity/Q2136907> ,
+                                                                                <http://nl.dbpedia.org/resource/Station_Mortsel-Liersesteenweg> .
+
+<http://triples.test/resource/Brussels-North_railway_station> rdf:type gml:_Feature ,
+                                                                      dbo:Place ,
+                                                                      dbo:Station ,
+                                                                      owl:Thing ,
+                                                                      dbo:Wikidata:Q532 ,
+                                                                      schema:Place ,
+                                                                      dbo:ArchitecturalStructure ,
+                                                                      dbo:Infrastructure ;
+                                                             rdfs:label "Brussels-North railway station"@en ;
+                                                             owl:sameAs <http://pt.dbpedia.org/resource/Estação_de_Bruxelas_Norte> ,
+                                                                        <http://ja.dbpedia.org/resource/ブリュッセル北駅> ,
+                                                                        <http://eu.dbpedia.org/resource/Brusela_Iparraldeko_geltokia> ,
+                                                                        <http://fr.dbpedia.org/resource/Gare_de_Bruxelles-Nord> ,
+                                                                        <http://www.wikidata.org/entity/Q660792> ,
+                                                                        <http://nl.dbpedia.org/resource/Station_Brussel-Noord> ,
+                                                                        <http://de.dbpedia.org/resource/Bahnhof_Bruxelles-Nord/Brussel-Noord> ,
+                                                                        <http://pl.dbpedia.org/resource/Bruxelles_Nord> ,
+                                                                        <http://it.dbpedia.org/resource/Stazione_di_Bruxelles-Nord> .
+<http://triples.test/resource/Haacht_railway_station> rdf:type dbo:Infrastructure ,
+                                                              dbo:Station ,
+                                                              dbo:Place ,
+                                                              dbo:ArchitecturalStructure ,
+                                                              gml:_Feature ,
+                                                              owl:Thing ,
+                                                              dbo:Wikidata:Q532 ,
+                                                              schema:Place ;
+                                                     rdfs:label "Haacht railway station"@en ;
+                                                     owl:sameAs <http://nl.dbpedia.org/resource/Station_Haacht> ,
+                                                                <http://fr.dbpedia.org/resource/Gare_de_Haacht> ,
+                                                                <http://www.wikidata.org/entity/Q289086> .
+
+<http://triples.test/resource/Genval_railway_station> rdf:type dbo:Wikidata:Q532 ,
+                                                              schema:Place ,
+                                                              dbo:ArchitecturalStructure ,
+                                                              dbo:Infrastructure ,
+                                                              gml:_Feature ,
+                                                              dbo:Place ,
+                                                              dbo:Station ,
+                                                              owl:Thing ;
+                                                     rdfs:label "Genval railway station"@en ;
+                                                     owl:sameAs <http://www.wikidata.org/entity/Q2845873> ,
+                                                                <http://fr.dbpedia.org/resource/Ancienne_gare_de_Genval> ,
+                                                                <http://nl.dbpedia.org/resource/Station_Genval> .
+
+<http://triples.test/resource/Gent-Sint-Pieters_railway_station> rdf:type dbo:Place ,
+                                                                         dbo:ArchitecturalStructure ,
+                                                                         owl:Thing ,
+                                                                         dbo:Station ,
+                                                                         gml:_Feature ,
+                                                                         dbo:Wikidata:Q532 ,
+                                                                         schema:Place ,
+                                                                         dbo:Infrastructure ;
+                                                                rdfs:label "Gent-Sint-Pieters railway station"@en ;
+                                                                owl:sameAs <http://de.dbpedia.org/resource/Bahnhof_Gent-Sint-Pieters> ,
+                                                                           <http://rdf.freebase.com/ns/m.0bnp14> ,
+                                                                           <http://fr.dbpedia.org/resource/Gare_de_Gand-Saint-Pierre> ,
+                                                                           <http://nl.dbpedia.org/resource/Station_Gent-Sint-Pieters> ,
+                                                                           <http://www.wikidata.org/entity/Q800814> ,
+                                                                           <http://ja.dbpedia.org/resource/ヘント＝シント＝ピーテルス駅> ,
+                                                                           <http://pl.dbpedia.org/resource/Gandawa_Sint-Pieters> .
+
+<http://triples.test/resource/Brussels_Central_Station> rdf:type gml:_Feature ,
+                                                                dbo:Station ,
+                                                                dbo:ArchitecturalStructure ,
+                                                                dbo:Infrastructure ,
+                                                                dbo:Place ,
+                                                                dbo:Wikidata:Q532 ,
+                                                                schema:Place ,
+                                                                owl:Thing ;
+                                                       rdfs:label "Brussels Central Station"@en ;
+                                                       owl:sameAs <http://cs.dbpedia.org/resource/Stanice_Bruxelles-Central> ,
+                                                                  <http://pl.dbpedia.org/resource/Bruxelles_Central> ,
+                                                                  <http://ja.dbpedia.org/resource/ブリュッセル中央駅> ,
+                                                                  <http://www.wikidata.org/entity/Q800588> ,
+                                                                  <http://pt.dbpedia.org/resource/Estação_Central_de_Bruxelas> ,
+                                                                  <http://fr.dbpedia.org/resource/Gare_de_Bruxelles-Central> ,
+                                                                  <http://de.dbpedia.org/resource/Bahnhof_Bruxelles-Central/Brussel-Centraal> ,
+                                                                  <http://nl.dbpedia.org/resource/Station_Brussel-Centraal> ,
+                                                                  <http://es.dbpedia.org/resource/Estación_Central_de_Bruselas> .
+
+<http://triples.test/resource/Gent-Dampoort_railway_station> rdf:type dbo:Station ,
+                                                                     dbo:Place ,
+                                                                     dbo:Infrastructure ,
+                                                                     dbo:ArchitecturalStructure ,
+                                                                     owl:Thing ,
+                                                                     dbo:Wikidata:Q532 ,
+                                                                     schema:Place ,
+                                                                     gml:_Feature ;
+                                                            rdfs:label "Gent-Dampoort railway station"@en ;
+                                                            dbp:passYear "2009"^^<http://www.w3.org/2001/XMLSchema#integer> ;
+                                                            owl:sameAs <http://nl.dbpedia.org/resource/Station_Gent-Dampoort> ,
+                                                                       <http://fr.dbpedia.org/resource/Gare_de_Gand-Dampoort> ,
+                                                                       <http://www.wikidata.org/entity/Q3096519> ;
+                                                            dbo:passengersPerYear "1611376"^^<http://www.w3.org/2001/XMLSchema#integer> .
+
+<http://triples.test/resource/Brugge_railway_station> rdf:type gml:_Feature ,
+                                                              dbo:Wikidata:Q532 ,
+                                                              schema:Place ,
+                                                              dbo:Place ,
+                                                              owl:Thing ,
+                                                              dbo:ArchitecturalStructure ,
+                                                              dbo:Station ,
+                                                              dbo:Infrastructure ;
+                                                     rdfs:label "Brugge railway station"@en ;
+                                                     dbp:passYear "2009"^^<http://www.w3.org/2001/XMLSchema#integer> ;
+                                                     owl:sameAs <http://de.dbpedia.org/resource/Bahnhof_Brugge> ,
+                                                                <http://nl.dbpedia.org/resource/Station_Brugge> ,
+                                                                <http://fr.dbpedia.org/resource/Gare_de_Bruges> ,
+                                                                <http://ja.dbpedia.org/resource/ブルッヘ駅> ,
+                                                                <http://www.wikidata.org/entity/Q800580> ;
+                                                     dbo:passengersPerYear "5542212"^^<http://www.w3.org/2001/XMLSchema#integer> .
+
+<http://triples.test/resource/Brussels-West_station> rdf:type dbo:ArchitecturalStructure ,
+                                                             dbo:Place ,
+                                                             gml:_Feature ,
+                                                             owl:Thing ,
+                                                             dbo:Wikidata:Q532 ,
+                                                             schema:Place ,
+                                                             dbo:Infrastructure ,
+                                                             dbo:Station ;
+                                                    rdfs:label "Brussels-West station"@en ;
+                                                    owl:sameAs <http://www.wikidata.org/entity/Q1942383> ,
+                                                               <http://pt.dbpedia.org/resource/Estação_Gare_de_l'Ouest> ,
+                                                               <http://es.dbpedia.org/resource/Estación_Gare_de_l'Ouest/Weststation> ,
+                                                               <http://fr.dbpedia.org/resource/Gare_de_l'Ouest_(métro_de_Bruxelles)> ,
+                                                               <http://pl.dbpedia.org/resource/Weststation_(metro_w_Brukseli)> ,
+                                                               <http://nl.dbpedia.org/resource/Station_Brussel-West> .
+
+<http://triples.test/resource/Antwerpen-Centraal_railway_station> rdf:type dbo:Infrastructure ,
+                                                                          gml:_Feature ,
+                                                                          dbo:Wikidata:Q532 ,
+                                                                          schema:Place ,
+                                                                          dbo:Station ,
+                                                                          dbo:ArchitecturalStructure ,
+                                                                          dbo:Place ,
+                                                                          owl:Thing ;
+                                                                 rdfs:label "Antwerpen-Centraal railway station"@en ;
+                                                                 owl:sameAs <http://www.wikidata.org/entity/Q800398> ,
+                                                                            <http://pl.dbpedia.org/resource/Antwerpia_Centralna> ,
+                                                                            <http://fr.dbpedia.org/resource/Gare_d'Anvers-Central> ,
+                                                                            <http://es.dbpedia.org/resource/Estación_de_Amberes-Central> ,
+                                                                            <http://nl.dbpedia.org/resource/Station_Antwerpen-Centraal> ,
+                                                                            <http://ru.dbpedia.org/resource/Антверпен-Центральный> ,
+                                                                            <http://de.dbpedia.org/resource/Bahnhof_Antwerpen-Centraal> ,
+                                                                            <http://ja.dbpedia.org/resource/アントウェルペン中央駅> .
+
+<http://triples.test/resource/Etterbeek_railway_station> rdf:type dbo:Place ,
+                                                                 dbo:ArchitecturalStructure ,
+                                                                 gml:_Feature ,
+                                                                 dbo:Infrastructure ,
+                                                                 owl:Thing ,
+                                                                 dbo:Station ,
+                                                                 dbo:Wikidata:Q532 ,
+                                                                 schema:Place ;
+                                                        rdfs:label "Etterbeek railway station"@en ;
+                                                        owl:sameAs <http://www.wikidata.org/entity/Q2723162> ,
+                                                                   <http://fr.dbpedia.org/resource/Gare_d'Etterbeek> ,
+                                                                   <http://nl.dbpedia.org/resource/Station_Etterbeek> .
+
+<http://triples.test/resource/Brussels-South_railway_station> rdf:type dbo:Wikidata:Q532 ,
+                                                                      dbo:Infrastructure ,
+                                                                      schema:Place ,
+                                                                      gml:_Feature ,
+                                                                      dbo:Place ,
+                                                                      dbo:Station ,
+                                                                      owl:Thing ,
+                                                                      dbo:ArchitecturalStructure ;
+                                                             rdfs:label "Brussels-South railway station"@en ;
+                                                             owl:sameAs <http://www.wikidata.org/entity/Q800587> ,
+                                                                        <http://es.dbpedia.org/resource/Estación_de_Bruselas_Sur> ,
+                                                                        <http://nl.dbpedia.org/resource/Station_Brussel-Zuid> ,
+                                                                        <http://eu.dbpedia.org/resource/Brusela_Hegoaldeko_geltokia> ,
+                                                                        <http://de.dbpedia.org/resource/Bahnhof_Bruxelles-Midi/Brussel-Zuid> ,
+                                                                        <http://ja.dbpedia.org/resource/ブリュッセル南駅> ,
+                                                                        <http://pl.dbpedia.org/resource/Bruxelles_Midi> ,
+                                                                        <http://fr.dbpedia.org/resource/Gare_de_Bruxelles-Midi> .
+
+<http://triples.test/resource/Libramont_railway_station> rdf:type dbo:Place ,
+                                                                 dbo:Wikidata:Q532 ,
+                                                                 schema:Place ,
+                                                                 gml:_Feature ,
+                                                                 dbo:Station ,
+                                                                 dbo:ArchitecturalStructure ,
+                                                                 dbo:Infrastructure ,
+                                                                 owl:Thing ;
+                                                        rdfs:label "Libramont railway station"@en ;
+                                                        dbp:passYear "2009"^^<http://www.w3.org/2001/XMLSchema#integer> ;
+                                                        owl:sameAs <http://www.wikidata.org/entity/Q2856503> ,
+                                                                   <http://nl.dbpedia.org/resource/Station_Libramont> ,
+                                                                   <http://fr.dbpedia.org/resource/Gare_de_Libramont> ;
+                                                        dbo:passengersPerYear "762268"^^<http://www.w3.org/2001/XMLSchema#integer> .
+
+<http://triples.test/resource/HSL_1> rdf:type dbo:Place ,
+                                             owl:Thing ,
+                                             dbo:ArchitecturalStructure ,
+                                             dbo:Wikidata:Q532 ,
+                                             schema:Place ,
+                                             dbo:Infrastructure ,
+                                             dbo:RailwayLine ,
+                                             dbo:RouteOfTransportation ;
+                                    rdfs:label "HSL 1"@en ;
+                                    owl:sameAs <http://fr.dbpedia.org/resource/LGV_1> ,
+                                               <http://nl.dbpedia.org/resource/HSL_1> ,
+                                               <http://www.wikidata.org/entity/Q1032137> ,
+                                               <http://ja.dbpedia.org/resource/ベルギー高速鉄道1号線> ,
+                                               <http://de.dbpedia.org/resource/HSL_1> ,
+                                               <http://pl.dbpedia.org/resource/HSL_1> ,
+                                               <http://es.dbpedia.org/resource/LAV_1_(Bélgica)> .
+
+<http://triples.test/resource/Schaarbeek_railway_station> rdf:type owl:Thing ,
+                                                                  dbo:Place ,
+                                                                  dbo:Wikidata:Q532 ,
+                                                                  schema:Place ,
+                                                                  dbo:ArchitecturalStructure ,
+                                                                  dbo:Infrastructure ,
+                                                                  gml:_Feature ,
+                                                                  dbo:Station ;
+                                                         rdfs:label "Schaarbeek railway station"@en ;
+                                                         owl:sameAs <http://es.dbpedia.org/resource/Estación_de_Schaerbeek> ,
+                                                                    <http://pt.dbpedia.org/resource/Estação_de_Schaerbeek> ,
+                                                                    <http://fr.dbpedia.org/resource/Gare_de_Schaerbeek> ,
+                                                                    <http://it.dbpedia.org/resource/Stazione_di_Schaerbeek> ,
+                                                                    <http://de.dbpedia.org/resource/Bahnhof_Schaerbeek/Schaarbeek> ,
+                                                                    <http://ru.dbpedia.org/resource/Схарбек_(станция)> ,
+                                                                    <http://www.wikidata.org/entity/Q801418> ,
+                                                                    <http://ja.dbpedia.org/resource/スカールベーク駅> ,
+                                                                    <http://nl.dbpedia.org/resource/Station_Schaarbeek> ,
+                                                                    <http://pl.dbpedia.org/resource/Schaarbeek_(stacja_kolejowa)> .
+
+<http://triples.test/resource/Brussels-Luxembourg_railway_station> rdf:type dbo:ArchitecturalStructure ,
+                                                                           dbo:Infrastructure ,
+                                                                           gml:_Feature ,
+                                                                           dbo:Station ,
+                                                                           dbo:Wikidata:Q532 ,
+                                                                           schema:Place ,
+                                                                           owl:Thing ,
+                                                                           dbo:Place ;
+                                                                  rdfs:label "Brussels-Luxembourg railway station"@en ;
+                                                                  owl:sameAs <http://de.dbpedia.org/resource/Bahnhof_Bruxelles-Luxembourg/Brussel-Luxemburg> ,
+                                                                             <http://ja.dbpedia.org/resource/ブリュッセル＝リュクサンブール駅> ,
+                                                                             <http://pl.dbpedia.org/resource/Bruxelles-Luxembourg> ,
+                                                                             <http://www.wikidata.org/entity/Q800583> ,
+                                                                             <http://nl.dbpedia.org/resource/Station_Brussel-Luxemburg> ,
+                                                                             <http://fr.dbpedia.org/resource/Gare_de_Bruxelles-Luxembourg> .
+
+<http://triples.test/resource/Eeklo_railway_station> rdf:type dbo:Infrastructure ,
+                                                             dbo:Wikidata:Q532 ,
+                                                             schema:Place ,
+                                                             dbo:Station ,
+                                                             gml:_Feature ,
+                                                             owl:Thing ,
+                                                             dbo:ArchitecturalStructure ,
+                                                             dbo:Place ;
+                                                    rdfs:label "Eeklo railway station"@en ;
+                                                    dbp:passYear "2009"^^<http://www.w3.org/2001/XMLSchema#integer> ;
+                                                    owl:sameAs <http://nl.dbpedia.org/resource/Station_Eeklo> ,
+                                                               <http://fr.dbpedia.org/resource/Gare_d'Eeklo> ,
+                                                               <http://www.wikidata.org/entity/Q12446> .
+
+<http://triples.test/resource/Mechelen-Nekkerspoel_railway_station> rdf:type dbo:Infrastructure ,
+                                                                            gml:_Feature ,
+                                                                            dbo:Place ,
+                                                                            dbo:ArchitecturalStructure ,
+                                                                            dbo:Wikidata:Q532 ,
+                                                                            schema:Place ,
+                                                                            dbo:Station ,
+                                                                            owl:Thing ;
+                                                                   rdfs:label "Mechelen-Nekkerspoel railway station"@en .
+
+<http://triples.test/resource/Kortrijk_railway_station> rdf:type dbo:ArchitecturalStructure ,
+                                                                gml:_Feature ,
+                                                                dbo:Station ,
+                                                                dbo:Place ,
+                                                                owl:Thing ,
+                                                                dbo:Infrastructure ,
+                                                                dbo:Wikidata:Q532 ,
+                                                                schema:Place ;
+                                                       rdfs:label "Kortrijk railway station"@en ;
+                                                       owl:sameAs <http://nl.dbpedia.org/resource/Station_Kortrijk> ,
+                                                                  <http://www.wikidata.org/entity/Q2786619> ,
+                                                                  <http://ja.dbpedia.org/resource/コルトレイク駅> ,
+                                                                  <http://fr.dbpedia.org/resource/Gare_de_Courtrai> .
+
+<http://triples.test/resource/Schuman_station> rdf:type dbo:ArchitecturalStructure ,
+                                                       gml:_Feature ,
+                                                       dbo:Wikidata:Q532 ,
+                                                       schema:Place ,
+                                                       dbo:Infrastructure ,
+                                                       dbo:Place ,
+                                                       dbo:Station ,
+                                                       owl:Thing ;
+                                              rdfs:label "Schuman station"@en ;
+                                              owl:sameAs <http://de.dbpedia.org/resource/Bahnhof_Bruxelles-Schuman/Brussel-Schuman> ,
+                                                         <http://www.wikidata.org/entity/Q800589> ,
+                                                         <http://nl.dbpedia.org/resource/Station_Brussel-Schuman> ,
+                                                         <http://es.dbpedia.org/resource/Estación_Schuman> ,
+                                                         <http://fr.dbpedia.org/resource/Gare_de_Bruxelles-Schuman> .
+
+<http://triples.test/resource/Leuven_railway_station> rdf:type owl:Thing ,
+                                                              dbo:Place ,
+                                                              dbo:Infrastructure ,
+                                                              dbo:ArchitecturalStructure ,
+                                                              dbo:Station ,
+                                                              gml:_Feature ,
+                                                              dbo:Wikidata:Q532 ,
+                                                              schema:Place ;
+                                                     rdfs:label "Leuven railway station"@en ;
+                                                     owl:sameAs <http://de.dbpedia.org/resource/Bahnhof_Leuven> ,
+                                                                <http://www.wikidata.org/entity/Q801090> ,
+                                                                <http://fr.dbpedia.org/resource/Gare_de_Louvain> ,
+                                                                <http://pl.dbpedia.org/resource/Leuven_(stacja_kolejowa)> ,
+                                                                <http://nl.dbpedia.org/resource/Station_Leuven> .
+
+<http://triples.test/resource/Evergem_railway_station> rdf:type dbo:Place ,
+                                                               dbo:ArchitecturalStructure ,
+                                                               gml:_Feature ,
+                                                               dbo:Wikidata:Q532 ,
+                                                               schema:Place ,
+                                                               dbo:Station ,
+                                                               dbo:Infrastructure ,
+                                                               owl:Thing ;
+                                                      rdfs:label "Evergem railway station"@en ;
+                                                      dbp:passYear "2009"^^<http://www.w3.org/2001/XMLSchema#integer> ;
+                                                      owl:sameAs <http://fr.dbpedia.org/resource/Gare_d'Evergem> ,
+                                                                 <http://nl.dbpedia.org/resource/Station_Evergem> ,
+                                                                 <http://www.wikidata.org/entity/Q2661638> .
+
+<http://triples.test/resource/Waarschoot_railway_station> rdf:type dbo:ArchitecturalStructure ,
+                                                                  gml:_Feature ,
+                                                                  dbo:Place ,
+                                                                  owl:Thing ,
+                                                                  dbo:Station ,
+                                                                  dbo:Infrastructure ,
+                                                                  dbo:Wikidata:Q532 ,
+                                                                  schema:Place ;
+                                                         rdfs:label "Waarschoot railway station"@en ;
+                                                         dbp:passYear "2009"^^<http://www.w3.org/2001/XMLSchema#integer> .
+
+<http://triples.test/resource/Antwerpen-Zuid_railway_station> rdf:type owl:Thing ,
+                                                                      gml:_Feature ,
+                                                                      dbo:Place ,
+                                                                      dbo:Infrastructure ,
+                                                                      dbo:ArchitecturalStructure ,
+                                                                      dbo:Station ,
+                                                                      dbo:Wikidata:Q532 ,
+                                                                      schema:Place ;
+                                                             rdfs:label "Antwerpen-Zuid railway station"@en ;
+                                                             owl:sameAs <http://www.wikidata.org/entity/Q1935700> ,
+                                                                        <http://nl.dbpedia.org/resource/Station_Antwerpen-Zuid> .

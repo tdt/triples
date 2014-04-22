@@ -84,6 +84,10 @@ class DataController extends \Controller
             $data->source_definition = $source_definition;
             $data->data = $result;
             $data->is_semantic = true;
+
+            // Add the available, supported formats to the object
+            $format_helper = new FormatHelper();
+            $data->formats = $format_helper->getAvailableFormats($data);
         }
 
         // Return the formatted response with content negotiation
