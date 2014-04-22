@@ -28,11 +28,16 @@ class TripleRepository implements TripleRepositoryInterface
      */
     public function getTriples($base_uri, $limit = 5000, $offset = 0)
     {
+        $count_arc_triples = $this->countARC2Triples($base_uri);
+
         $query = $this->createSparqlQuery($base_uri, $limit, $offset);
 
         $store = $this->setUpArc2Store();
 
         $result = $store->query($query);
+
+        // Fetch the template parameters from the request
+        list($p, $o) = $this->getTemplateParameters();
 
         // The result will be in an array structure, we need to build an
         // EasyRdf_Graph out of this
@@ -51,6 +56,9 @@ class TripleRepository implements TripleRepositoryInterface
         // But since sparql sources aren't cached, this mechanism will
         // have to be simulated.
         $count_arc_triples = $this->countARC2Triples($base_uri);
+
+        // Total amount of triples
+        $total_triples_count = $this->getCount($base_uri);
 
         $triples_fetched = $count_arc_triples - $offset;
 
@@ -85,7 +93,16 @@ class TripleRepository implements TripleRepositoryInterface
                     $endpoint = rtrim($endpoint, '/');
 
                     // Prepare the count query
-                    $count_query = "select (count(*) AS ?count) WHERE { <$base_uri> ?p ?o. OPTIONAL {?o ?p1 ?o1. ?o1 ?p2 ?o3. }}";
+
+                    list($p, $o) = $this->getTemplateParameters();
+
+                    $count_query = '';
+
+                    if ($p == '?p' && $o == '?o') {
+                        $count_query = "select (count(*) AS ?count) WHERE { <$base_uri> ?p ?o. OPTIONAL {?o ?p1 ?o1. ?o1 ?p2 ?o3. }}";
+                    } else {
+                        $count_query = "select (count(*) AS ?count) WHERE { <$base_uri> $p $o }";
+                    }
 
                     $count_query = urlencode($count_query);
                     $count_query = str_replace("+", "%20", $count_query);
@@ -104,6 +121,7 @@ class TripleRepository implements TripleRepositoryInterface
                         // add them and update the offset, if not higher, then only update the offset
 
                         if ($count > $offset) {
+
                             // Read the triples from the sparql endpoint
                             $query_limit = $limit - $total_triples;
 
@@ -117,6 +135,7 @@ class TripleRepository implements TripleRepositoryInterface
                             $result = $this->executeUri($query_uri, $user, $pw);
 
                             if (!empty($result) && $result[0] == '<') {
+
                                 // Parse the triple response and retrieve the triples from them
                                 $result_graph = new \EasyRdf_Graph();
                                 $parser = new \EasyRdf_Parser_RdfXml();
@@ -126,6 +145,7 @@ class TripleRepository implements TripleRepositoryInterface
                                 $graph = $this->mergeGraph($graph, $result_graph);
 
                                 $total_triples += $count - $offset;
+
                             } else {
                                 \Log::error("Something went wrong while fetching the triples from a sparql source. The error was " . $result . ". The query was : " . $query_uri);
                             }
@@ -142,6 +162,9 @@ class TripleRepository implements TripleRepositoryInterface
                 }
             }
         }
+
+        // Add the void and hydra triples to the resulting graph
+        $graph = $this->addMetaTriples($base_uri, $graph, $total_triples_count);
 
         return $graph;
     }
@@ -317,7 +340,7 @@ class TripleRepository implements TripleRepositoryInterface
     }
 
     /**
-     * Initialize the ARC2 MySQL triplestore and return it
+     * Initialize the ARC2 MySQL triplestore (if necessary) and return the instance
      * https://github.com/semsol/arc2/wiki/Using-ARC%27s-RDF-Store
      *
      * @return mixed
@@ -419,23 +442,50 @@ class TripleRepository implements TripleRepositoryInterface
      */
     private function createSparqlQuery($base_uri, $limit = 5000, $offset = 0, $depth = 3)
     {
-        $vars = '<'. $base_uri .'> ?p ?o1.';
 
-        $last_object = '?o1';
+        list($p, $o) = $this->getTemplateParameters();
+
+        $vars = '<'. $base_uri .'> ' . $p . ' ' . $o . '.';
+
+        $last_object = $o;
         $depth_vars = '';
 
-        for ($i = 2; $i <= $depth; $i++) {
+        $construct_statement = '';
+        $filter_statement = '';
 
-            $depth_vars .= $last_object . ' ?p' . $i . ' ?o' . $i . '. ';
+        // Only when no template parameter is given, add the depth parameters
+        if ($p == '?p' && $o == '?o') {
 
-            $last_object = '?o' . $i;
+            for ($i = 2; $i <= $depth; $i++) {
+
+                $depth_vars .= $last_object . ' ?p' . $i . ' ?o' . $i . '. ';
+
+                $last_object = '?o' . $i;
+            }
+
+            $construct_statement = 'construct {' . $vars . $depth_vars . '}';
+            $filter_statement = '{'. $vars . 'OPTIONAL { ' . $depth_vars . '}}';
+
+        } else {
+
+            $construct_statement = 'construct {' . $vars . ' }';
+            $filter_statement = '{'. $vars . ' }';
         }
 
-        $construct_statement = 'construct {' . $vars . $depth_vars . '}';
-        $filter_statement = '{'. $vars . 'OPTIONAL { ' . $depth_vars . '}}';
-
-        return $construct_statement . $filter_statement . ' offset ' . $offset . 'limit ' . $limit;
+        return $construct_statement . $filter_statement . ' offset ' . $offset . ' limit ' . $limit;
     }
+
+    /**
+     * Get the template parameters from the request (predicate, object)
+     * predicate defaults to ?p and object to ?o
+     *
+     * @return array
+     */
+    private function getTemplateParameters()
+    {
+        return array(\Input::get('predicate', '?p'), \Input::get('object', '?o'));
+    }
+
 
     /**
      * Create an EasyRdf_Graph out of an ARC2 query result structure
@@ -447,6 +497,8 @@ class TripleRepository implements TripleRepositoryInterface
     private function buildGraph(array $result)
     {
         $graph = new \EasyRdf_Graph();
+
+        //dd($result);
 
         $triples_buffer = array();
 
@@ -474,8 +526,10 @@ class TripleRepository implements TripleRepositoryInterface
                     } else { //literal
                         if (!empty($val['lang'])) {
                             $triple .= '"' . $val['value'] . '"@' . $val['lang'] . '.';
-                        } else {
+                        } else if (!empty($val['datatype'])) {
                             $triple .= '"' . $val['value'] . '"^^<' . $val['datatype'] . '>.';
+                        } else { // Blank node
+                            $triple .= ' ' . $val['value'] . '.';
                         }
                     }
 
@@ -489,6 +543,80 @@ class TripleRepository implements TripleRepositoryInterface
         $parser = new \EasyRdf_Parser_Turtle();
 
         $parser->parse($graph, $ttl_string, 'turtle', '');
+
+        return $graph;
+    }
+
+    /**
+     * Add void and hydra meta-data to an existing graph
+     *
+     * @param string        $base_uri The URI of the request
+     * @param EasyRdf_Graph $graph    The graph to which meta data has to be added
+     * @param integer       $count    The total amount of triples that match the URI
+     *
+     * @return EasyRdf_Graph $graph
+     */
+    private function addMetaTriples($base_uri, $graph, $count)
+    {
+        // Add the void and hydra namespace to the EasyRdf framework
+        \EasyRdf_Namespace::set('hydra', 'http://www.w3.org/ns/hydra/core#');
+        \EasyRdf_Namespace::set('void', 'http://rdfs.org/ns/void#');
+        \EasyRdf_Namespace::set('dcterms', 'http://purl.org/dc/terms/');
+
+        // Add the meta data semantics to the graph
+        $root = \Request::root();
+        $root .= '/';
+
+        //\EasyRdf_Namespace::set('', $root);
+
+        $graph = new \EasyRdf_Graph();
+
+        // Count the graph triples without the meta-data we add here
+        $total_graph_triples = $graph->countTriples();
+
+        $identifier = str_replace($root, '', $base_uri);
+
+        $graph->addResource($base_uri, 'a', 'void:Dataset');
+        $graph->addResource($base_uri, 'a', 'hydra:Collection');
+
+        $resource = $graph->resource($base_uri);
+        $mapping = $graph->resource('hydra:mapping');
+        $mapping->addLiteral('hydra:template', $base_uri . '{predicate, object}');
+        $graph->addResource($resource, 'hydra:search', $mapping);
+
+        // _:triplePattern
+        /*$triple_pattern = $graph->resource('_:triplePattern');
+        $triple_pattern->addResource('hydra:template', $base_uri . '{predicate, object}');
+        $triple_pattern->addResource('hydra:mapping', '_:subject');
+        $triple_pattern->addResource('hydra:mapping', '_:predicate');
+        $triple_pattern->addResource('hydra:mapping', '_:object');
+
+        // _:subject
+        $subject = $graph->resource('_:subject');
+        $subject->addLiteral('hydra:variable', 'subject');
+        $subject->addResource('hydra:property', 'rdf:subject');
+
+        // _:predicate
+        $predicate = $graph->resource('_:predicate');
+        $predicate->addLiteral('hydra:variable', 'predicate');
+        $predicate->addResource('hydra:property', 'rdf:predicate');
+
+        // _:object
+        $object = $graph->resource('_:object');
+        $object->addLiteral('hydra:variable', 'predicate');
+        $object->addResource('hydra:property', 'rdf:object');
+
+        // Add the result meta-data
+        $graph->addResource($base_uri, 'a', 'hydra:Collection');
+        $graph->addResource($base_uri, 'a', 'hydra:PagedCollection');*/
+        $graph->addResource($base_uri, 'dcterms:title', 'A linked dataset');
+
+        // Add the pattern
+        $pattern = "Semantic dataset containing triples matching the pattern { <" . $base_uri . "> ?p ?o}";
+        $graph->addLiteral($base_uri, 'dcterms:description', $pattern);
+        $graph->addLiteral($base_uri, 'hydra:endpoint', ":$identifier");
+        $graph->addLiteral($base_uri, 'hydra:totalItems', \EasyRdf_Literal::create($count, null, 'xsd:integer'));
+        $graph->addLiteral($base_uri, 'void:triples', \EasyRdf_Literal::create($total_graph_triples));
 
         return $graph;
     }
@@ -515,7 +643,7 @@ class TripleRepository implements TripleRepositoryInterface
      * have a subject that matches base_uri
      *
      * @param $base_uri
-     *
+     *@
      * @return integer
      */
     public function getCount($base_uri)
@@ -535,7 +663,15 @@ class TripleRepository implements TripleRepositoryInterface
 
             $endpoint = rtrim($endpoint, '/');
 
-            $count_query = "select (count(*) AS ?count) WHERE { <$base_uri> ?p ?o. OPTIONAL {?o ?p1 ?o1. ?o1 ?p2 ?o3. }}";
+            list($p, $o) = $this->getTemplateParameters();
+
+            $count_query = '';
+
+            if ($p == '?p' && $o == '?o') {
+                $count_query = "select (count(*) AS ?count) WHERE { <$base_uri> ?p ?o. OPTIONAL {?o ?p1 ?o1. ?o1 ?p2 ?o3. }}";
+            } else {
+                $count_query = "select (count(*) AS ?count) WHERE { <$base_uri> $p $o }";
+            }
 
             $count_query = urlencode($count_query);
             $count_query = str_replace("+", "%20", $count_query);
@@ -566,8 +702,18 @@ class TripleRepository implements TripleRepositoryInterface
      */
     private function countARC2Triples($base_uri)
     {
-        // Count the triples in our ARC2 store
-        $count_query = "select (count(?p) as ?count) WHERE { <$base_uri> ?p ?o. OPTIONAL {?o ?p1 ?o1. ?o1 ?p2 ?o3. }}";
+        list($p, $o) = $this->getTemplateParameters();
+
+        $count_query = '';
+
+        if ($p == '?p' && $o == '?o') {
+            $count_query = "select (count(?o) AS ?count) WHERE { <$base_uri> ?p ?o. OPTIONAL {?o ?p1 ?o1. ?o1 ?p2 ?o3. }}";
+        } else {
+            $count_query = "select
+                            (count(*) AS ?count)
+                            WHERE { <$base_uri> $p $o }
+                            ";
+        }
 
         $store = $this->setUpArc2Store();
 

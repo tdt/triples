@@ -52,7 +52,3 @@ The package needs a few extra datatables for its configuration, so go ahead and 
 
 You're ready to start using tdt/triples. Each api resource in the datatank is located under <root>/api, and triples is not exception. Hence, api/triples is the URI to which all the CRUD requests have to be done.
 
-
-## Future work
-
-At the time of writing, this should be used for proof-of-concept and demo purposes. A next step in this additional functionality is adding optimization techniques such as caching, indexing semantic sources to subject URIs, ...
