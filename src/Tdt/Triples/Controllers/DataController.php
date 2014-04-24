@@ -39,7 +39,7 @@ class DataController extends \Controller
         // Get extension
         $extension = (!empty($matches[2]))? $matches[2]: null;
 
-        if ($this->definition->exists($identifier)) {
+        if ($this->isCoreDataset($identifier)) {
 
             $controller = \App::make('Tdt\Core\Datasets\DatasetController');
 
@@ -51,6 +51,12 @@ class DataController extends \Controller
 
             $format_helper = new FormatHelper();
             $data->formats = $format_helper->getAvailableFormats($data);
+
+        } else if ($this->isCoreResource($identifier)) {
+
+            $controller = \App::make('Tdt\Core\BaseController');
+
+            return $controller->handleRequest($identifier);
 
         } else {
 
@@ -92,5 +98,45 @@ class DataController extends \Controller
 
         // Return the formatted response with content negotiation
         return ContentNegotiator::getResponse($data, $extension);
+    }
+
+    /**
+     * Check if the identifier that has been passed is resolvable as a core resource
+     *
+     * @param string $identifier The URI identifier of the resource to resolve
+     *
+     * @return boolean
+     */
+    private function isCoreResource($identifier)
+    {
+        // Get the discovery controller
+        $discovery = \App::make('Tdt\Core\Definitions\DiscoveryController');
+
+        $discovery_document = $discovery->createDiscoveryDocument();
+
+            // Check if the first part of the identifier is part of the core resources
+
+        $core_resources = array_keys(get_object_vars($discovery_document->resources));
+
+        $parts = explode('/', $identifier);
+        $prefix = array_shift($parts);
+
+        if (in_array($prefix, $core_resources)) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Check if the identifier is a core published dataset
+     *
+     * @param string $identifier
+     *
+     * @return boolean
+     */
+    private function isCoreDataset($identifier)
+    {
+        return $this->definition->exists($identifier);
     }
 }

@@ -529,10 +529,6 @@ class TripleRepository implements TripleRepositoryInterface
         $root = \Request::root();
         $root .= '/';
 
-        //\EasyRdf_Namespace::set('', $root);
-
-        $graph = new \EasyRdf_Graph();
-
         // Count the graph triples without the meta-data we add here
         $total_graph_triples = $graph->countTriples();
 
@@ -542,43 +538,33 @@ class TripleRepository implements TripleRepositoryInterface
         $graph->addResource($base_uri, 'a', 'hydra:Collection');
 
         $resource = $graph->resource($base_uri);
-        $mapping = $graph->resource('hydra:mapping');
-        $mapping->addLiteral('hydra:template', $base_uri . '{predicate, object}');
-        $graph->addResource($resource, 'hydra:search', $mapping);
 
-        // _:triplePattern
-        /*$triple_pattern = $graph->resource('_:triplePattern');
-        $triple_pattern->addResource('hydra:template', $base_uri . '{predicate, object}');
-        $triple_pattern->addResource('hydra:mapping', '_:subject');
-        $triple_pattern->addResource('hydra:mapping', '_:predicate');
-        $triple_pattern->addResource('hydra:mapping', '_:object');
+        $object_temp_mapping = $graph->newBNode();
+        $object_temp_mapping->addResource('a', 'hydra:IriTemplateMapping');
+        $object_temp_mapping->addLiteral('hydra:variable', 'object');
+        $object_temp_mapping->addResource('hydra:property', 'rdf:object');
 
-        // _:subject
-        $subject = $graph->resource('_:subject');
-        $subject->addLiteral('hydra:variable', 'subject');
-        $subject->addResource('hydra:property', 'rdf:subject');
+        $predicate_temp_mapping = $graph->newBNode();
+        $predicate_temp_mapping->addResource('a', 'hydra:IriTemplateMapping');
+        $predicate_temp_mapping->addLiteral('hydra:variable', 'predicate');
+        $predicate_temp_mapping->addResource('hydra:property', 'rdf:object');
 
-        // _:predicate
-        $predicate = $graph->resource('_:predicate');
-        $predicate->addLiteral('hydra:variable', 'predicate');
-        $predicate->addResource('hydra:property', 'rdf:predicate');
+        $iri_template = $graph->newBNode();
+        $iri_template->addResource('a', 'hydra:IriTemplate');
+        $iri_template->addLiteral('hydra:template', $base_uri . '{predicate, object}');
 
-        // _:object
-        $object = $graph->resource('_:object');
-        $object->addLiteral('hydra:variable', 'predicate');
-        $object->addResource('hydra:property', 'rdf:object');
+        $iri_template->addResource('hydra:mapping', $predicate_temp_mapping);
+        $iri_template->addResource('hydra:mapping', $object_temp_mapping);
+        $graph->addResource($base_uri, 'hydra:search', $iri_template);
 
-        // Add the result meta-data
-        $graph->addResource($base_uri, 'a', 'hydra:Collection');
-        $graph->addResource($base_uri, 'a', 'hydra:PagedCollection');*/
-        $graph->addResource($base_uri, 'dcterms:title', 'A linked dataset');
+        $graph->addLiteral($base_uri, 'dcterms:title', 'A linked dataset');
 
         // Add the pattern
         $pattern = "Semantic dataset containing triples matching the pattern { <" . $base_uri . "> ?p ?o}";
         $graph->addLiteral($base_uri, 'dcterms:description', $pattern);
-        $graph->addLiteral($base_uri, 'hydra:endpoint', ":$identifier");
-        $graph->addLiteral($base_uri, 'hydra:totalItems', \EasyRdf_Literal::create($count, null, 'xsd:integer'));
-        $graph->addLiteral($base_uri, 'void:triples', \EasyRdf_Literal::create($total_graph_triples));
+        $graph->addResource($base_uri, 'hydra:entrypoint', $root);
+        $graph->addLiteral($base_uri, 'hydra:totalItems', \EasyRdf_Literal::create($total_graph_triples, null, 'xsd:integer'));
+        $graph->addLiteral($base_uri, 'void:triples', \EasyRdf_Literal::create($total_graph_triples, null, 'xsd:integer'));
 
         return $graph;
     }
