@@ -529,9 +529,6 @@ class TripleRepository implements TripleRepositoryInterface
         $root = \Request::root();
         $root .= '/';
 
-        // Count the graph triples without the meta-data we add here
-        $total_graph_triples = $graph->countTriples();
-
         $identifier = str_replace($root, '', $base_uri);
 
         $graph->addResource($base_uri, 'a', 'void:Dataset');
@@ -563,8 +560,12 @@ class TripleRepository implements TripleRepositoryInterface
         $pattern = "Semantic dataset containing triples matching the pattern { <" . $base_uri . "> ?p ?o}";
         $graph->addLiteral($base_uri, 'dcterms:description', $pattern);
         $graph->addResource($base_uri, 'hydra:entrypoint', $root);
-        $graph->addLiteral($base_uri, 'hydra:totalItems', \EasyRdf_Literal::create($total_graph_triples, null, 'xsd:integer'));
-        $graph->addLiteral($base_uri, 'void:triples', \EasyRdf_Literal::create($total_graph_triples, null, 'xsd:integer'));
+
+        // Count the graph triples
+        $total_graph_triples = $graph->countTriples();
+
+        $graph->addLiteral($base_uri, 'hydra:totalItems', \EasyRdf_Literal::create($total_graph_triples + 2, null, 'xsd:integer'));
+        $graph->addLiteral($base_uri, 'void:triples', \EasyRdf_Literal::create($total_graph_triples + 2, null, 'xsd:integer'));
 
         return $graph;
     }
