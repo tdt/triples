@@ -634,11 +634,13 @@ class TripleRepository implements TripleRepositoryInterface
         $graph->addLiteral($base_uri, 'dcterms:description', $pattern);
         $graph->addResource($base_uri, 'hydra:entrypoint', $root);
 
-        // Count the graph triples
+        // Count the graph triples of the entire query (including the parameter strings)
         $total_graph_triples = $graph->countTriples();
 
-        $graph->addLiteral($base_uri, 'hydra:totalItems', \EasyRdf_Literal::create($total_graph_triples + 2, null, 'xsd:integer'));
-        $graph->addLiteral($base_uri, 'void:triples', \EasyRdf_Literal::create($total_graph_triples + 2, null, 'xsd:integer'));
+        $fullUrl = \Request::fullUrl();
+
+        $graph->addLiteral($fullUrl, 'hydra:totalItems', \EasyRdf_Literal::create($total_graph_triples + 2, null, 'xsd:integer'));
+        $graph->addLiteral($fullUrl, 'void:triples', \EasyRdf_Literal::create($total_graph_triples + 2, null, 'xsd:integer'));
 
         return $graph;
     }
