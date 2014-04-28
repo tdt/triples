@@ -58,6 +58,8 @@ class TriplesController extends \Controller
      */
     public function get()
     {
+        Auth::requirePermissions('definitions.view');
+
         $sources = $this->semantic_source->getAllConfigurations();
 
         $result = new Data();

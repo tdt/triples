@@ -36,18 +36,20 @@ class TripleRepository implements TripleRepositoryInterface
 
         $result = $store->query($query);
 
-        // Fetch the template parameters from the request
-        list($p, $o) = $this->getTemplateParameters();
-
         // The result will be in an array structure, we need to build an
         // EasyRdf_Graph out of this
 
-        $graph = $this->buildGraph($result['result']);
+        if (!empty($result['result'])) {
+            $graph = $this->buildGraph($result['result']);
+        } else {
+            $graph = new \EasyRdf_Graph();
+        }
 
         if (!$result) {
-            $message = array_shift($store->getErrors());
+            $errors = $store->getErrors();
+            $message = array_shift($errors);
 
-            \Log::error(500, "Something went wrong while fetching triples from the store: ");
+            \Log::error("Error occured in the triples package, while trying to retrieve triples: " . $message);
         }
 
         // Fetch data out of the sparql endpoint as well,
@@ -92,17 +94,38 @@ class TripleRepository implements TripleRepositoryInterface
 
                     $endpoint = rtrim($endpoint, '/');
 
-                    // Prepare the count query
+                    list($s, $p, $o) = $this->getTemplateParameters();
 
-                    list($p, $o) = $this->getTemplateParameters();
+                    $vars = $s . ' ' . $p . ' ' . $o . '.';
+
+                    $last_object = $o;
+                    $depth_vars = '';
+
+                    $construct_statement = '';
+                    $filter_statement = '';
 
                     $count_query = '';
 
-                    if ($p == '?p' && $o == '?o') {
-                        $count_query = "select (count(*) AS ?count) WHERE { <$base_uri> ?p ?o. OPTIONAL {?o ?p1 ?o1. ?o1 ?p2 ?o3. }}";
+                    if ($s == '?s' && $p == '?p' && $o == '?o') {
+
+                        $select_statement = 'select (count(*) as ?count) ';
+                        $filter_statement = '{ {'. $vars .
+                        ' FILTER( regex(?s, "' . $base_uri . '#.*", "i" ) ). ' .
+                        'OPTIONAL { ' . $depth_vars . '}} ' .
+                        ' UNION { '. $vars .
+                        ' FILTER( regex(?s, "' . $base_uri . '", "i" )). ' .
+                        'OPTIONAL { ' . $depth_vars . '}} ' .
+                        ' }';
                     } else {
-                        $count_query = "select (count(*) AS ?count) WHERE { <$base_uri> $p $o }";
+                        $select_statement = 'select (count(*) as ?count) ';
+                        $filter_statement = '{ {'. $vars .
+                        ' FILTER( regex(?s, "' . $base_uri . '#.*", "i" ) ). } ' .
+                        ' UNION { '. $vars .
+                        ' FILTER( regex(?s, "' . $base_uri . '", "i" )). ' .
+                        ' }}';
                     }
+
+                    $count_query = $select_statement . $filter_statement;
 
                     $count_query = urlencode($count_query);
                     $count_query = str_replace("+", "%20", $count_query);
@@ -442,10 +465,9 @@ class TripleRepository implements TripleRepositoryInterface
      */
     private function createSparqlQuery($base_uri, $limit = 5000, $offset = 0, $depth = 3)
     {
+        list($s, $p, $o) = $this->getTemplateParameters();
 
-        list($p, $o) = $this->getTemplateParameters();
-
-        $vars = '<'. $base_uri .'> ' . $p . ' ' . $o . '.';
+        $vars = $s . ' ' . $p . ' ' . $o . '.';
 
         $last_object = $o;
         $depth_vars = '';
@@ -454,7 +476,7 @@ class TripleRepository implements TripleRepositoryInterface
         $filter_statement = '';
 
         // Only when no template parameter is given, add the depth parameters
-        if ($p == '?p' && $o == '?o') {
+        if ($s == '?s' && $p == '?p' && $o == '?o') {
 
             for ($i = 2; $i <= $depth; $i++) {
 
@@ -464,12 +486,21 @@ class TripleRepository implements TripleRepositoryInterface
             }
 
             $construct_statement = 'construct {' . $vars . $depth_vars . '}';
-            $filter_statement = '{'. $vars . 'OPTIONAL { ' . $depth_vars . '}}';
-
+            $filter_statement = '{ {'. $vars .
+                                ' FILTER( regex(?s, "' . $base_uri . '#.*", "i" ) ). ' .
+                                'OPTIONAL { ' . $depth_vars . '}} ' .
+                                ' UNION { '. $vars .
+                                ' FILTER( regex(?s, "' . $base_uri . '", "i" )). ' .
+                                'OPTIONAL { ' . $depth_vars . '}} ' .
+                                ' }';
         } else {
 
             $construct_statement = 'construct {' . $vars . ' }';
-            $filter_statement = '{'. $vars . ' }';
+            $filter_statement = '{ {'. $vars .
+                                ' FILTER( regex(?s, "' . $base_uri . '#.*", "i" ) ). } ' .
+                                ' UNION { '. $vars .
+                                ' FILTER( regex(?s, "' . $base_uri . '", "i" )). ' .
+                                ' }}';
         }
 
         return $construct_statement . $filter_statement . ' offset ' . $offset . ' limit ' . $limit;
@@ -483,7 +514,26 @@ class TripleRepository implements TripleRepositoryInterface
      */
     private function getTemplateParameters()
     {
-        return array(\Input::get('predicate', '?p'), \Input::get('object', '?o'));
+        list($s, $p, $o) = array(
+                                \Request::query('subject', '?s'),
+                                \Request::query('predicate', '?p'),
+                                \Request::query('object', '?o')
+                            );
+
+        if (substr($s, 0, 4) == "http") {
+            $s = '<' . $s . '>';
+        }
+
+        // TODO expand prefixes
+        if (substr($p, 0, 4) == "http") {
+            $p = '<' . $p . '>';
+        }
+
+        if (substr($o, 0, 4) == "http") {
+            $o = '<' . $o . '>';
+        }
+
+        return array($s, $p, $o);
     }
 
 
@@ -498,13 +548,16 @@ class TripleRepository implements TripleRepositoryInterface
     {
         $graph = new \EasyRdf_Graph();
 
-        $store = $this->setUpArc2Store();
+        if (!empty($result)) {
 
-        $ttl_string = $store->toNTriples($result);
+            $store = $this->setUpArc2Store();
 
-        $parser = new \EasyRdf_Parser_Turtle();
+            $ttl_string = $store->toNTriples($result);
 
-        $parser->parse($graph, $ttl_string, 'turtle', '');
+            $parser = new \EasyRdf_Parser_Turtle();
+
+            $parser->parse($graph, $ttl_string, 'turtle', '');
+        }
 
         return $graph;
     }
@@ -536,28 +589,48 @@ class TripleRepository implements TripleRepositoryInterface
 
         $resource = $graph->resource($base_uri);
 
+        $subject_temp_mapping = $graph->newBNode();
+        $subject_temp_mapping->addResource('a', 'hydra:IriTemplateMapping');
+        $subject_temp_mapping->addLiteral('hydra:variable', 'subject');
+        $subject_temp_mapping->addResource('hydra:property', 'rdf:subject');
+
+        $predicate_temp_mapping = $graph->newBNode();
+        $predicate_temp_mapping->addResource('a', 'hydra:IriTemplateMapping');
+        $predicate_temp_mapping->addLiteral('hydra:variable', 'predicate');
+        $predicate_temp_mapping->addResource('hydra:property', 'rdf:predicate');
+
         $object_temp_mapping = $graph->newBNode();
         $object_temp_mapping->addResource('a', 'hydra:IriTemplateMapping');
         $object_temp_mapping->addLiteral('hydra:variable', 'object');
         $object_temp_mapping->addResource('hydra:property', 'rdf:object');
 
-        $predicate_temp_mapping = $graph->newBNode();
-        $predicate_temp_mapping->addResource('a', 'hydra:IriTemplateMapping');
-        $predicate_temp_mapping->addLiteral('hydra:variable', 'predicate');
-        $predicate_temp_mapping->addResource('hydra:property', 'rdf:object');
-
         $iri_template = $graph->newBNode();
         $iri_template->addResource('a', 'hydra:IriTemplate');
-        $iri_template->addLiteral('hydra:template', $base_uri . '{predicate, object}');
+        $iri_template->addLiteral('hydra:template', $base_uri . '{?subject, predicate, object}');
 
+        $iri_template->addResource('hydra:mapping', $subject_temp_mapping);
         $iri_template->addResource('hydra:mapping', $predicate_temp_mapping);
         $iri_template->addResource('hydra:mapping', $object_temp_mapping);
+
+        // Add the template to the requested URI resource in the graph
         $graph->addResource($base_uri, 'hydra:search', $iri_template);
 
         $graph->addLiteral($base_uri, 'dcterms:title', 'A linked dataset');
 
-        // Add the pattern
-        $pattern = "Semantic dataset containing triples matching the pattern { <" . $base_uri . "> ?p ?o}";
+        // Add information about the pattern we used to fetch triples
+        $pattern = "Semantic dataset containing triples matching the spo-pattern: ";
+
+        // If any parameters are passed, we don't go deeper than the current pattern
+        // If none are passed, go 3 levels deep, in which each subject is the previous object (?o = ?s1)
+        list($s, $p, $o) = $this->getTemplateParameters();
+
+        if ($s == '?s' && $p == '?p' && $o == '?o') {
+            $pattern .= "?s ?p ?o . No request parameters have been passed, therefore triples are returned going up untill 3 levels deep.
+            (?s ?p ?o. ?o ?p1 ?o1. etc. ) where $base_uri is used as the first level subject.";
+        } else {
+            $pattern .= "$s $p $o .";
+        }
+
         $graph->addLiteral($base_uri, 'dcterms:description', $pattern);
         $graph->addResource($base_uri, 'hydra:entrypoint', $root);
 
@@ -612,15 +685,38 @@ class TripleRepository implements TripleRepositoryInterface
 
             $endpoint = rtrim($endpoint, '/');
 
-            list($p, $o) = $this->getTemplateParameters();
+            list($s, $p, $o) = $this->getTemplateParameters();
+
+            $vars = $s . ' ' . $p . ' ' . $o . '.';
+
+            $last_object = $o;
+            $depth_vars = '';
+
+            $construct_statement = '';
+            $filter_statement = '';
 
             $count_query = '';
 
-            if ($p == '?p' && $o == '?o') {
-                $count_query = "select (count(*) AS ?count) WHERE { <$base_uri> ?p ?o. OPTIONAL {?o ?p1 ?o1. ?o1 ?p2 ?o3. }}";
+            if ($s == '?s' && $p == '?p' && $o == '?o') {
+
+                $select_statement = 'select (count(*) as ?count) ';
+                $filter_statement = '{ {'. $vars .
+                                ' FILTER( regex(?s, "' . $base_uri . '#.*", "i" ) ). ' .
+                                'OPTIONAL { ' . $depth_vars . '}} ' .
+                                ' UNION { '. $vars .
+                                ' FILTER( regex(?s, "' . $base_uri . '", "i" )). ' .
+                                'OPTIONAL { ' . $depth_vars . '}} ' .
+                                ' }';
             } else {
-                $count_query = "select (count(*) AS ?count) WHERE { <$base_uri> $p $o }";
+                $select_statement = 'select (count(*) as ?count) ';
+                $filter_statement = '{ {'. $vars .
+                                ' FILTER( regex(?s, "' . $base_uri . '#.*", "i" ) ). } ' .
+                                ' UNION { '. $vars .
+                                ' FILTER( regex(?s, "' . $base_uri . '", "i" )). ' .
+                                ' }}';
             }
+
+            $count_query = $select_statement . $filter_statement;
 
             $count_query = urlencode($count_query);
             $count_query = str_replace("+", "%20", $count_query);
@@ -651,18 +747,45 @@ class TripleRepository implements TripleRepositoryInterface
      */
     private function countARC2Triples($base_uri)
     {
-        list($p, $o) = $this->getTemplateParameters();
+        list($s, $p, $o) = $this->getTemplateParameters();
 
-        $count_query = '';
+        $vars = $s . ' ' . $p . ' ' . $o . '.';
 
-        if ($p == '?p' && $o == '?o') {
-            $count_query = "select (count(?o) AS ?count) WHERE { <$base_uri> ?p ?o. OPTIONAL {?o ?p1 ?o1. ?o1 ?p2 ?o3. }}";
+        $last_object = $o;
+        $depth_vars = '';
+
+        $construct_statement = '';
+        $filter_statement = '';
+
+        // Only when no template parameter is given, add the depth parameters
+        if ($s == '?s' && $p == '?p' && $o == '?o') {
+
+            for ($i = 2; $i <= 3; $i++) {
+
+                $depth_vars .= $last_object . ' ?p' . $i . ' ?o' . $i . '. ';
+
+                $last_object = '?o' . $i;
+            }
+
+            $select_statement = 'select (count(*) as ?count) ';
+            $filter_statement = '{ {'. $vars .
+                                ' FILTER( regex(?s, "' . $base_uri . '#.*", "i" ) ). ' .
+                                'OPTIONAL { ' . $depth_vars . '}} ' .
+                                ' UNION { '. $vars .
+                                ' FILTER( regex(?s, "' . $base_uri . '", "i" )). ' .
+                                'OPTIONAL { ' . $depth_vars . '}} ' .
+                                ' }';
         } else {
-            $count_query = "select
-                            (count(*) AS ?count)
-                            WHERE { <$base_uri> $p $o }
-                            ";
+
+            $select_statement = 'select (count(*) as ?count) ';
+            $filter_statement = '{ {'. $vars .
+                                ' FILTER( regex(?s, "' . $base_uri . '#.*", "i" ) ). } ' .
+                                ' UNION { '. $vars .
+                                ' FILTER( regex(?s, "' . $base_uri . '", "i" )). ' .
+                                ' }}';
         }
+
+        $count_query = $select_statement . $filter_statement;
 
         $store = $this->setUpArc2Store();
 
