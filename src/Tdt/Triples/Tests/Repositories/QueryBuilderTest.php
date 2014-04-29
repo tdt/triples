@@ -5,7 +5,7 @@ namespace Tdt\Triples\Tests\Repositories;
 use Tdt\Triples\Repositories\ARC2\TripleRepository;
 use Tdt\Triples\Repositories\QueryBuilder;
 
-class TripleRepoTest extends \PHPUnit_Framework_TestCase
+class QueryBuilderTest extends \PHPUnit_Framework_TestCase
 {
 
     public function testCountQueryWithoutParameters()
