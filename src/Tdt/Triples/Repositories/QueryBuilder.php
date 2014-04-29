@@ -32,6 +32,11 @@ class QueryBuilder
     {
         list($s, $p, $o) = $this->query_string_params;
 
+        // If subject has been passed, it should be the same as the base_uri
+        if (substr($s, 0, 4) == "http") {
+            $s = $base_uri;
+        }
+
         $vars = $s . ' ' . $p . ' ' . $o . '.';
 
         $last_object = $o;
@@ -52,20 +57,15 @@ class QueryBuilder
             }
 
             $select_statement = 'select (count(*) as ?count) ';
+
             $filter_statement = '{ {'. $vars .
-            ' FILTER( regex(?s, "' . $base_uri . '#.*", "i" ) ). ' .
-            'OPTIONAL { ' . $depth_vars . '}} ' .
-            ' UNION { '. $vars .
-            ' FILTER( regex(?s, "' . $base_uri . '", "i" )). ' .
-            'OPTIONAL { ' . $depth_vars . '}} ' .
-            ' }';
+            ' FILTER( regex(?s, "' . $base_uri . '#.*", "i" ) || regex(?s, "' . $base_uri . '", "i" ) ). ' .
+            'OPTIONAL { ' . $depth_vars . '}}}';
         } else {
             $select_statement = 'select (count(*) as ?count) ';
-            $filter_statement = '{ {'. $vars .
-            ' FILTER( regex(?s, "' . $base_uri . '#.*", "i" ) ). } ' .
-            ' UNION { '. $vars .
-            ' FILTER( regex(?s, "' . $base_uri . '", "i" )). ' .
-            ' }}';
+
+            $filter_statement = '{ '. $vars .
+            ' FILTER( regex(?s, "' . $base_uri . '#.*", "i" ) || regex(?s, "' . $base_uri . '", "i" )). }';
         }
 
         return $select_statement . $filter_statement;
@@ -103,21 +103,14 @@ class QueryBuilder
             }
 
             $construct_statement = 'construct {' . $vars . $depth_vars . '}';
-            $filter_statement = '{ {'. $vars .
-                                ' FILTER( regex(?s, "' . $base_uri . '#.*", "i" ) ). ' .
-                                'OPTIONAL { ' . $depth_vars . '}} ' .
-                                ' UNION { '. $vars .
-                                ' FILTER( regex(?s, "' . $base_uri . '", "i" )). ' .
-                                'OPTIONAL { ' . $depth_vars . '}} ' .
-                                ' }';
+            $filter_statement = '{ '. $vars .
+                                ' FILTER( regex(?s, "' . $base_uri . '#.*", "i" ) || regex(?s, "' . $base_uri . '", "i" )). ' .
+                                'OPTIONAL { ' . $depth_vars . '}}';
         } else {
 
             $construct_statement = 'construct {' . $vars . ' }';
-            $filter_statement = '{ {'. $vars .
-                                ' FILTER( regex(?s, "' . $base_uri . '#.*", "i" ) ). } ' .
-                                ' UNION { '. $vars .
-                                ' FILTER( regex(?s, "' . $base_uri . '", "i" )). ' .
-                                ' }}';
+            $filter_statement = '{ '. $vars .
+                                ' FILTER( regex(?s, "' . $base_uri . '#.*", "i" ) || regex(?s, "' . $base_uri . '", "i" )). }';
         }
 
         return $construct_statement . $filter_statement . ' offset ' . $offset . ' limit ' . $limit;

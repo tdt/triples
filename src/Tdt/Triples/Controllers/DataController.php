@@ -137,6 +137,8 @@ class DataController extends \Controller
 
         if (substr($o, 0, 4) == "http") {
             $o = '<' . $o . '>';
+        } else {
+            $o = '"' . $o . '"';
         }
 
         return array($s, $p, $o);

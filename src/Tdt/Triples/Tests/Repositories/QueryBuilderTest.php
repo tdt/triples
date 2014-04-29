@@ -14,9 +14,9 @@ class QueryBuilderTest extends \PHPUnit_Framework_TestCase
 
         $count_query = $query_builder->createCountQuery('http://foo.test/');
 
-        $expected_query = 'select (count(*) as ?count) { {?s ?p ?o. FILTER( regex(?s, "http://foo.test/#.*", "i" ) ). ' .
-        'OPTIONAL { ?o ?p2 ?o2. ?o2 ?p3 ?o3. }}  UNION { ?s ?p ?o. FILTER( regex(?s, "http://foo.test/", "i" )). ' .
-        'OPTIONAL { ?o ?p2 ?o2. ?o2 ?p3 ?o3. }}  }';
+        $expected_query = 'select (count(*) as ?count) { {?s ?p ?o. FILTER( regex(?s, "http://foo.test/#.*", "i" ) '.
+            '|| regex(?s, "http://foo.test/", "i" ) ). ' .
+            'OPTIONAL { ?o ?p2 ?o2. ?o2 ?p3 ?o3. }}}';
 
         $this->assertEquals($expected_query, $count_query);
     }
@@ -25,10 +25,11 @@ class QueryBuilderTest extends \PHPUnit_Framework_TestCase
     {
         $query_builder = new QueryBuilder(array('<http://foobar.test/>', '?p', '?o'));
 
-        $count_query = $query_builder->createCountQuery('http://foo.test/');
+        $count_query = $query_builder->createCountQuery('http://foobar.test/');
 
-        $expected_query = 'select (count(*) as ?count) { {<http://foobar.test/> ?p ?o. FILTER( regex(?s, "http://foo.test/#.*", "i" ) ). }  '.
-        'UNION { <http://foobar.test/> ?p ?o. FILTER( regex(?s, "http://foo.test/", "i" )).  }}';
+        $expected_query = 'select (count(*) as ?count) { <http://foobar.test/> ?p ?o. '.
+            'FILTER( regex(?s, "http://foobar.test/#.*", "i" )'.
+            ' || regex(?s, "http://foobar.test/", "i" )). }';
 
         $this->assertEquals($expected_query, $count_query);
     }
@@ -39,8 +40,8 @@ class QueryBuilderTest extends \PHPUnit_Framework_TestCase
 
         $count_query = $query_builder->createCountQuery('http://foo.test/');
 
-        $expected_query = 'select (count(*) as ?count) { {?s <http://foobar/predicate#relationship ?o. FILTER( regex(?s, "http://foo.test/#.*", "i" ) ). }  '.
-        'UNION { ?s <http://foobar/predicate#relationship ?o. FILTER( regex(?s, "http://foo.test/", "i" )).  }}';
+        $expected_query = 'select (count(*) as ?count) { ?s <http://foobar/predicate#relationship ?o. '.
+        'FILTER( regex(?s, "http://foo.test/#.*", "i" ) || regex(?s, "http://foo.test/", "i" )). }';
 
         $this->assertEquals($expected_query, $count_query);
     }
@@ -51,9 +52,58 @@ class QueryBuilderTest extends \PHPUnit_Framework_TestCase
 
         $count_query = $query_builder->createCountQuery('http://foo.test/');
 
-        $expected_query = 'select (count(*) as ?count) { {?s ?p 42. FILTER( regex(?s, "http://foo.test/#.*", "i" ) ). }  '.
-        'UNION { ?s ?p 42. FILTER( regex(?s, "http://foo.test/", "i" )).  }}';
+        $expected_query = 'select (count(*) as ?count) { ?s ?p 42. FILTER( regex(?s, "http://foo.test/#.*", "i" ) '.
+            '|| regex(?s, "http://foo.test/", "i" )). }';
 
         $this->assertEquals($expected_query, $count_query);
+    }
+
+    public function testConstructQueryWithoutParameters()
+    {
+        $query_builder = new QueryBuilder(array('?s', '?p', '?o'));
+
+        $construct_query = $query_builder->createConstructSparqlQuery('http://foo.test/');
+
+        $expected_query = 'construct {?s ?p ?o.?o ?p2 ?o2. ?o2 ?p3 ?o3. }{ ?s ?p ?o. FILTER( regex(?s, "http://foo.test/#.*", "i" )'.
+        ' || regex(?s, "http://foo.test/", "i" )). OPTIONAL { ?o ?p2 ?o2. ?o2 ?p3 ?o3. }} offset 0 limit 5000';
+
+        $this->assertEquals($expected_query, $construct_query);
+    }
+
+    public function testConstructQueryWithSubject()
+    {
+        $query_builder = new QueryBuilder(array('<http://foobar.test/>', '?p', '?o'));
+
+        $construct_query = $query_builder->createConstructSparqlQuery('http://foo.test/');
+
+        $expected_query = 'construct {<http://foobar.test/> ?p ?o. }{ <http://foobar.test/> ?p ?o. '.
+        'FILTER( regex(?s, "http://foo.test/#.*", "i" ) || regex(?s, "http://foo.test/", "i" )). } offset 0 limit 5000';
+
+        $this->assertEquals($expected_query, $construct_query);
+    }
+
+    public function testConstructQueryWithPredicate()
+    {
+        $query_builder = new QueryBuilder(array('?s', '<http://foobar/predicate#relationship', '?o'));
+
+        $construct_query = $query_builder->createConstructSparqlQuery('http://foo.test/');
+
+        $expected_query = 'construct {?s <http://foobar/predicate#relationship ?o. }{ ?s <http://foobar/predicate#relationship ?o. '.
+        'FILTER( regex(?s, "http://foo.test/#.*", "i" ) || regex(?s, "http://foo.test/", "i" )). } offset 0 limit 5000';
+
+        $this->assertEquals($expected_query, $construct_query);
+    }
+
+    public function testConstructQueryWithObject()
+    {
+        $query_builder = new QueryBuilder(array('?s', '?p', '42'));
+
+        $construct_query = $query_builder->createConstructSparqlQuery('http://foo.test/');
+
+        $expected_query = 'construct {?s ?p 42. }{ ?s ?p 42. '.
+        'FILTER( regex(?s, "http://foo.test/#.*", "i" ) || regex(?s, "http://foo.test/", "i" )). } '.
+        'offset 0 limit 5000';
+
+        $this->assertEquals($expected_query, $construct_query);
     }
 }
