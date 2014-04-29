@@ -13,6 +13,9 @@
         "semsol/arc2" : "dev-master",
         "easyrdf/easyrdf" : "dev-devel"
     },
+    "require-dev" : {
+        "mockery/mockery": "dev-master@dev"
+    },
     "autoload": {
         "classmap": [
             "src/migrations",

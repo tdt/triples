@@ -7,6 +7,7 @@ use Tdt\Core\Repositories\Interfaces\DefinitionRepositoryInterface;
 use Tdt\Core\ContentNegotiator;
 use Tdt\Core\Datasets\Data;
 use Tdt\Core\Formatters\FormatHelper;
+use Tdt\Core\Cache\Cache;
 
 /**
  * DataController checks if the core application can resolve
@@ -60,44 +61,85 @@ class DataController extends \Controller
 
         } else {
 
-            $base_uri = \URL::to($identifier);
+            $cache_string = sha1(\Request::fullUrl());
 
-            $result = $this->triples->getTriples($base_uri);
+            // Check cache
+            if (Cache::has($cache_string)) {
+                $data = Cache::get($cache_string);
+            } else {
 
-            // If the graph contains no triples, then the uri couldn't resolve to anything, 404 it is
-            if ($result->countTriples() == 0) {
-                \App::abort(404, "The resource couldn't be found, nor dereferenced.");
+                $base_uri = \URL::to($identifier);
+
+                $result = $this->triples->getTriples($base_uri, $this->getTemplateParameters());
+
+                // If the graph contains no triples, then the uri couldn't resolve to anything, 404 it is
+                if ($result->countTriples() == 0) {
+                    \App::abort(404, "The resource couldn't be found, nor dereferenced.");
+                }
+
+                // Mock a tdt/core definition object that is used in the formatters
+                $identifier_pieces = explode('/', $identifier);
+
+                $resource_name = array_pop($identifier_pieces);
+                $collection_uri = implode('/', $identifier_pieces);
+
+                $definition = array(
+                    'resource_name' => $resource_name,
+                    'collection_uri' => $collection_uri,
+                    );
+
+                $source_definition = array(
+                    'description' => 'Semantic data collected out the configuration of semantic data sources related to the given URI.',
+                    'type' => 'Semantic',
+                    );
+
+                $data = new Data();
+                $data->definition = $definition;
+                $data->source_definition = $source_definition;
+                $data->data = $result;
+                $data->is_semantic = true;
+
+                // Add the available, supported formats to the object
+                $format_helper = new FormatHelper();
+                $data->formats = $format_helper->getAvailableFormats($data);
+
+                // Store in cache for a default of 5 minutes
+                Cache::put($cache_string, $data, 5);
             }
-
-            // Mock a tdt/core definition object that is used in the formatters
-            $identifier_pieces = explode('/', $identifier);
-
-            $resource_name = array_pop($identifier_pieces);
-            $collection_uri = implode('/', $identifier_pieces);
-
-            $definition = array(
-                'resource_name' => $resource_name,
-                'collection_uri' => $collection_uri,
-            );
-
-            $source_definition = array(
-                'description' => 'Semantic data collected out the configuration of semantic data sources related to the given URI.',
-                'type' => 'Semantic',
-            );
-
-            $data = new Data();
-            $data->definition = $definition;
-            $data->source_definition = $source_definition;
-            $data->data = $result;
-            $data->is_semantic = true;
-
-            // Add the available, supported formats to the object
-            $format_helper = new FormatHelper();
-            $data->formats = $format_helper->getAvailableFormats($data);
         }
 
         // Return the formatted response with content negotiation
         return ContentNegotiator::getResponse($data, $extension);
+    }
+
+    /**
+     * Get the template parameters from the request (predicate, object)
+     * predicate defaults to ?p and object to ?o
+     *
+     * @return array
+     */
+    private function getTemplateParameters()
+    {
+        list($s, $p, $o) = array(
+                                \Request::query('subject', '?s'),
+                                \Request::query('predicate', '?p'),
+                                \Request::query('object', '?o')
+                            );
+
+        if (substr($s, 0, 4) == "http") {
+            $s = '<' . $s . '>';
+        }
+
+        // TODO expand prefixes
+        if (substr($p, 0, 4) == "http") {
+            $p = '<' . $p . '>';
+        }
+
+        if (substr($o, 0, 4) == "http") {
+            $o = '<' . $o . '>';
+        }
+
+        return array($s, $p, $o);
     }
 
     /**

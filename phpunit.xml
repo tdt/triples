@@ -11,8 +11,9 @@
          syntaxCheck="false"
 >
     <testsuites>
-        <testsuite name="Package Test Suite">
-            <directory suffix=".php">./tests/</directory>
+         <testsuite name="Triples Package Test Suite">
+            <directory>./src/Tdt/Triples/Tests/Repositories</directory>
+            <directory>./src/Tdt/Triples/Tests/Controllers</directory>
         </testsuite>
     </testsuites>
 </phpunit>
