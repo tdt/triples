@@ -137,7 +137,8 @@ class DataController extends \Controller
 
         if (substr($o, 0, 4) == "http") {
             $o = '<' . $o . '>';
-        } else {
+        } else if ($o != '?o') {
+            // If the object isn't URI, enquote it, unless it's meant as a sparql variable
             $o = '"' . $o . '"';
         }
 
@@ -158,8 +159,7 @@ class DataController extends \Controller
 
         $discovery_document = $discovery->createDiscoveryDocument();
 
-            // Check if the first part of the identifier is part of the core resources
-
+        // Check if the first part of the identifier is part of the core resources
         $core_resources = array_keys(get_object_vars($discovery_document->resources));
 
         $parts = explode('/', $identifier);

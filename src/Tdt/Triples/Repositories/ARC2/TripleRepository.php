@@ -547,7 +547,7 @@ class TripleRepository implements TripleRepositoryInterface
      * Return the total amount of triples that
      * have a subject that matches base_uri
      *
-     * @param $base_uri
+     * @param string $base_uri
      *@
      * @return integer
      */
