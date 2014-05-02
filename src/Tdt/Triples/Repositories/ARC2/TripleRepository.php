@@ -504,7 +504,11 @@ class TripleRepository implements TripleRepositoryInterface
 
         $graph->addResource($base_uri, 'hydra:entrypoint', $root);
 
-        $fullUrl = \Request::fullUrl();
+        $fullUrl = \Request::url();
+
+        foreach (\Request::all() as $param => $value) {
+            $fullUrl .= $param . '=' . $value;
+        }
 
         $graph->addLiteral($fullUrl, 'hydra:totalItems', \EasyRdf_Literal::create($total_graph_triples, null, 'xsd:integer'));
         $graph->addLiteral($fullUrl, 'void:triples', \EasyRdf_Literal::create($total_graph_triples, null, 'xsd:integer'));
