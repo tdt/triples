@@ -165,7 +165,7 @@ class TripleRepository implements TripleRepositoryInterface
         }
 
         // If the graph doesn't contain any triples, then the resource can't be resolved
-        if ($graph->countTriples()) {
+        if ($graph->countTriples() == 0) {
             \App::abort(404, 'The resource could not be found.');
         }
 
