@@ -495,24 +495,7 @@ class TripleRepository implements TripleRepositoryInterface
 
         // Add the template to the requested URI resource in the graph
         $graph->addResource($base_uri, 'hydra:search', $iri_template);
-
-        $graph->addLiteral($base_uri, 'dcterms:title', 'A linked dataset');
-
-        // Add information about the pattern we used to fetch triples
-        $pattern = "Semantic dataset containing triples matching the spo-pattern: ";
-
-        // If any parameters are passed, we don't go deeper than the current pattern
-        // If none are passed, go 3 levels deep, in which each subject is the previous object (?o = ?s1)
-        list($s, $p, $o) = $this->parameters;
-
-        if ($s == '?s' && $p == '?p' && $o == '?o') {
-            $pattern .= "?s ?p ?o . No request parameters have been passed, therefore triples are returned going up untill 3 levels deep.
-            (?s ?p ?o. ?o ?p1 ?o1. etc. ) where $base_uri is used as the first level subject.";
-        } else {
-            $pattern .= "$s $p $o .";
-        }
-
-        $graph->addLiteral($base_uri, 'dcterms:description', $pattern);
+        
         $graph->addResource($base_uri, 'hydra:entrypoint', $root);
 
         // Count the graph triples of the entire query (including the parameter strings)
