@@ -487,7 +487,7 @@ class TripleRepository implements TripleRepositoryInterface
 
         $iri_template = $graph->newBNode();
         $iri_template->addResource('a', 'hydra:IriTemplate');
-        $iri_template->addLiteral('hydra:template', $base_uri . '{?subject, predicate, object}');
+        $iri_template->addLiteral('hydra:template', $base_uri . '{?subject,predicate,object}');
 
         $iri_template->addResource('hydra:mapping', $subject_temp_mapping);
         $iri_template->addResource('hydra:mapping', $predicate_temp_mapping);
