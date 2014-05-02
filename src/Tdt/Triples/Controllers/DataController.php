@@ -138,7 +138,7 @@ class DataController extends \Controller
         if (substr($o, 0, 4) == "http") {
             $o = '<' . $o . '>';
         } else if ($o != '?o' && substr($o, 0, 5) != '<http') {
-            // If the object isn't URI, enquote it, unless it's meant as a sparql variable
+            // If the object isn't URI, enquote it, unless it's meant as a sparql variable or an enclosed URI
             $o = '"' . $o . '"';
         }
 

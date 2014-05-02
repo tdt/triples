@@ -34,8 +34,6 @@ class TripleRepository implements TripleRepositoryInterface
      */
     public function getTriples($base_uri, $parameters, $limit = 5000, $offset = 0)
     {
-        $count_arc_triples = $this->countARC2Triples($base_uri);
-
         // Fetch the query string parameters
         $this->parameters = $parameters;
 
@@ -164,6 +162,11 @@ class TripleRepository implements TripleRepositoryInterface
                     }
                 }
             }
+        }
+
+        // If the graph doesn't contain any triples, then the resource can't be resolved
+        if ($graph->countTriples()) {
+            \App::abort(404, 'The resource could not be found.');
         }
 
         // Add the void and hydra triples to the resulting graph
