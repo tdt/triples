@@ -16,8 +16,8 @@ class InitSparqlSource extends Migration {
 		Schema::create('sparqlsources', function($table){
 			$table->increments('id');
 			$table->string('endpoint', 255);
-			$table->string('endpoint_password', 255);
-			$table->string('endpoint_user', 255);
+			$table->string('endpoint_password', 255)->nullable();
+			$table->string('endpoint_user', 255)->nullable();
 			$table->timestamps();
 		});
 	}
