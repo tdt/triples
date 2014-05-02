@@ -64,10 +64,12 @@ class SemanticSourceRepository implements SemanticSourceRepositoryInterface
         $object = $this->model->find($id);
 
         if (!empty($object)) {
-            return $object->delete();
+            $object->delete();
+
+            return true;
         }
 
-        return $object;
+        return false;
     }
 
     /**

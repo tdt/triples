@@ -391,10 +391,10 @@ class TripleRepository implements TripleRepositoryInterface
 
         $result = $store->query($delete_query, 'raw');
 
-        \Log::info("The triples from the graph " . $graph_name . " have been deleted.");
-
         if (!$result) {
             \Log::warning("The delete query that deletes triples from graph with id $id, encountered an error.");
+        } else {
+            \Log::info("The triples from the graph " . $graph_name . " have been deleted.");
         }
     }
 
@@ -459,6 +459,9 @@ class TripleRepository implements TripleRepositoryInterface
         \EasyRdf_Namespace::set('void', 'http://rdfs.org/ns/void#');
         \EasyRdf_Namespace::set('dcterms', 'http://purl.org/dc/terms/');
 
+        // Count the graph triples of the entire query (including the parameter strings)
+        $total_graph_triples = $graph->countTriples();
+
         // Add the meta data semantics to the graph
         $root = \Request::root();
         $root .= '/';
@@ -495,16 +498,13 @@ class TripleRepository implements TripleRepositoryInterface
 
         // Add the template to the requested URI resource in the graph
         $graph->addResource($base_uri, 'hydra:search', $iri_template);
-        
-        $graph->addResource($base_uri, 'hydra:entrypoint', $root);
 
-        // Count the graph triples of the entire query (including the parameter strings)
-        $total_graph_triples = $graph->countTriples();
+        $graph->addResource($base_uri, 'hydra:entrypoint', $root);
 
         $fullUrl = \Request::fullUrl();
 
-        $graph->addLiteral($fullUrl, 'hydra:totalItems', \EasyRdf_Literal::create($total_graph_triples + 2, null, 'xsd:integer'));
-        $graph->addLiteral($fullUrl, 'void:triples', \EasyRdf_Literal::create($total_graph_triples + 2, null, 'xsd:integer'));
+        $graph->addLiteral($fullUrl, 'hydra:totalItems', \EasyRdf_Literal::create($total_graph_triples, null, 'xsd:integer'));
+        $graph->addLiteral($fullUrl, 'void:triples', \EasyRdf_Literal::create($total_graph_triples, null, 'xsd:integer'));
 
         return $graph;
     }
