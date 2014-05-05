@@ -86,9 +86,6 @@ class TriplesController extends \Controller
 
         if (!empty($result) && is_array($result)) {
 
-            // Sync the semantic data in our store
-            $this->triple_store->cacheTriples($result['id'], $input);
-
             $response = \Response::make("", 200);
             $response->header('Location', \URL::to('api/triples'));
 
@@ -108,12 +105,6 @@ class TriplesController extends \Controller
         $result = $this->semantic_source->update($id, $input);
 
         if (!empty($result) && is_array($result)) {
-
-            // Remove the old triples from the store
-            $this->triple_store->removeTriples($id);
-
-            // Sync the semantic data in our store
-            $this->triple_store->cacheTriples($result['id'], $input);
 
             $response = \Response::make("", 200);
             $response->header('Location', \URL::to('api/triples'));
