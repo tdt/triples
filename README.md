@@ -3,7 +3,9 @@
 
 tdt/triples is a repository that hooks into [The DataTank core](https://github.com/tdt/core) application, and provides the functionality to build your URI space through the configuration of semantic resources, in addition to the URI space of The DataTank.
 
-It specifically needs a MySQL database for optimization purposes, make sure your datatank project is configured with a MySQL connection. Also note that for caching purposes it uses the semsol/arc2 library which works on PHP 5.3 and 5.4. From 5.5 the MySQL driver that semsol/arc2 uses is [deprecated](https://github.com/semsol/arc2/issues/58). This can be solved by creating a different TriplesRepository instance that uses a genuine triplestore (or other solutions) for caching. Due to dependency injection, this is quite easy to implement.
+It reads the triples from the semantic sources, and by default it stores them into a local simulated triple store based on MySQL. Therefore it needs a MySQL database, so make sure your datatank project is configured with a MySQL connection.
+
+Also note that for this kind of "triple caching", it uses the semsol/arc2 library which works on PHP 5.3 and 5.4. From 5.5 the MySQL driver that semsol/arc2 uses is [deprecated](https://github.com/semsol/arc2/issues/58). This can be solved by creating a different TriplesRepository instance that uses a genuine triplestore (or other solutions) to store triples in. Because we've built this type of caching with dependency injection, it makes it easy to provide your own triple caching.
 
 ## Purpose
 
@@ -33,7 +35,7 @@ The current supported semantic sources are Turtle files, RDF files and SPARQL-en
 
 ## Installation
 
-This package works with version 4.3 or higher ( if 4.3 is not available, try the development branch) of [the datatank core](https://github.com/tdt/core), and is under active development. If you have remarks, suggestions, issues, etc. please don't hesitate to log an issue on the github repository.
+This package works with version 4.3 or higher ( if 4.3 is not available, try the development branch) of [the datatank core](https://github.com/tdt/core), and is under active development. If you have remarks, suggestions, issues, etc. please don't hesitate to log it on the github repository.
 
 1) Edit composer.json
 
@@ -49,7 +51,13 @@ The package needs a few extra datatables for its configuration, so go ahead and 
 
     $ php artisan migrate --package=tdt/triples
 
-3) Done!
+3) Notify core
+
+Let the core application know you have added functionality it should take into account. Do this by adding 'Tdt\Triples\TriplesServiceProvider' to the app.php file located in the app/config folder.
+
+4) Update
+
+Run composer update, and you're done!
 
 You're ready to start using tdt/triples. Each api resource in the datatank is located under <root>/api, and triples is not exception. Hence, api/triples is the URI to which all the CRUD requests have to be done.
 
