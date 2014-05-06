@@ -26,13 +26,13 @@ class TripleRepository implements TripleRepositoryInterface
     /**
      * Return all triples with a subject that equals the base uri
      *
-     * @param string $base_uri
+     * @param string  $base_uri
      * @param integer $limit
      * @param integer $offset
      *
      * @return EasyRdf_Graph
      */
-    public function getTriples($base_uri, $parameters, $limit = 5000, $offset = 0)
+    public function getTriples($base_uri, $parameters, $limit = 200, $offset = 0)
     {
         // Fetch the query string parameters
         $this->parameters = $parameters;
@@ -40,6 +40,8 @@ class TripleRepository implements TripleRepositoryInterface
         $this->query_builder->setParameters($parameters);
 
         $query = $this->query_builder->createConstructSparqlQuery($base_uri, $limit, $offset);
+
+        //dd($query);
 
         $store = $this->setUpArc2Store();
 
@@ -469,10 +471,14 @@ class TripleRepository implements TripleRepositoryInterface
         $root = \Request::root();
         $root .= '/';
 
+        if (empty($base_uri)) {
+            $base_uri = $root . 'all';
+        }
+
         $identifier = str_replace($root, '', $base_uri);
 
-        $graph->addResource($base_uri, 'a', 'void:Dataset');
-        $graph->addResource($base_uri, 'a', 'hydra:Collection');
+        $graph->addResource($base_uri . '#dataset', 'a', 'void:Dataset');
+        $graph->addResource($base_uri . '#dataset', 'a', 'hydra:Collection');
 
         $resource = $graph->resource($base_uri);
 
@@ -493,25 +499,30 @@ class TripleRepository implements TripleRepositoryInterface
 
         $iri_template = $graph->newBNode();
         $iri_template->addResource('a', 'hydra:IriTemplate');
-        $iri_template->addLiteral('hydra:template', $base_uri . '{?subject,predicate,object}');
+        $iri_template->addLiteral('hydra:template', $root . 'all' . '{?subject,predicate,object}');
 
         $iri_template->addResource('hydra:mapping', $subject_temp_mapping);
         $iri_template->addResource('hydra:mapping', $predicate_temp_mapping);
         $iri_template->addResource('hydra:mapping', $object_temp_mapping);
 
         // Add the template to the requested URI resource in the graph
-        $graph->addResource($base_uri, 'hydra:search', $iri_template);
+        $graph->addResource($base_uri . '#dataset', 'hydra:search', $iri_template);
 
-        $graph->addResource($base_uri, 'hydra:entrypoint', $root);
-
-        $fullUrl = \Request::url();
+        $fullUrl = $base_uri . '?';
 
         foreach (\Request::all() as $param => $value) {
             $fullUrl .= $param . '=' . $value;
         }
 
+        $fullUrl = rtrim($fullUrl, '?');
+
+        if ($base_uri != $root . 'all') {
+            $fullUrl .= '#dataset';
+        }
+
         $graph->addLiteral($fullUrl, 'hydra:totalItems', \EasyRdf_Literal::create($total_graph_triples, null, 'xsd:integer'));
         $graph->addLiteral($fullUrl, 'void:triples', \EasyRdf_Literal::create($total_graph_triples, null, 'xsd:integer'));
+        $graph->addResource($root . 'all#dataset', 'void:subset', $fullUrl);
 
         return $graph;
     }

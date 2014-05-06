@@ -26,11 +26,17 @@ class QueryBuilder
     /**
      * Make and return a SPARQL count query, taken into account the passed query string parameters
      *
+     * @param string $base_uri The base_uri that will serve as a subject in the query
+     *
      * @return string
      */
-    public function createCountQuery($base_uri)
+    public function createCountQuery($base_uri = null)
     {
         list($s, $p, $o) = $this->query_string_params;
+
+        if (empty($base_uri)) {
+            return $this->createVariableCountQuery();
+        }
 
         // If subject has been passed, it should be the same as the base_uri
         if (substr($s, 0, 4) == "http") {
@@ -59,18 +65,17 @@ class QueryBuilder
             $select_statement = 'select (count(*) as ?count) ';
 
             $filter_statement = '{ {'. $vars .
-            ' FILTER( regex(?s, "' . $base_uri . '#.*", "i" ) || regex(?s, "' . $base_uri . '", "i" ) ). ' .
+            ' FILTER( regex(?s, "^' . $base_uri . '#.*", "i" ) || regex(?s, "^' . $base_uri . '$", "i" ) ). ' .
             'OPTIONAL { ' . $depth_vars . '}}}';
         } else {
             $select_statement = 'select (count(*) as ?count) ';
 
             $filter_statement = '{ '. $vars .
-            ' FILTER( regex(?s, "' . $base_uri . '#.*", "i" ) || regex(?s, "' . $base_uri . '", "i" )). }';
+            ' FILTER( regex(?s, "^' . $base_uri . '#.*", "i" ) || regex(?s, "^' . $base_uri . '$", "i" )). }';
         }
 
         return $select_statement . $filter_statement;
     }
-
 
     /**
      * Creates a query that fetches all of the triples
@@ -80,9 +85,13 @@ class QueryBuilder
      *
      * @return string
      */
-    public function createConstructSparqlQuery($base_uri, $limit = 5000, $offset = 0, $depth = 3)
+    public function createConstructSparqlQuery($base_uri = null, $limit = 200, $offset = 0, $depth = 3)
     {
         list($s, $p, $o) = $this->query_string_params;
+
+        if (empty($base_uri)) {
+            return $this->createVariableConstructSparqlQuery();
+        }
 
         $vars = $s . ' ' . $p . ' ' . $o . '.';
 
@@ -104,16 +113,49 @@ class QueryBuilder
 
             $construct_statement = 'construct {' . $vars . $depth_vars . '}';
             $filter_statement = '{ '. $vars .
-                                ' FILTER( regex(?s, "' . $base_uri . '#.*", "i" ) || regex(?s, "' . $base_uri . '", "i" )). ' .
+                                ' FILTER( regex(?s, "^' . $base_uri . '#.*", "i" ) || regex(?s, "^' . $base_uri . '$", "i" )). ' .
                                 'OPTIONAL { ' . $depth_vars . '}}';
         } else {
 
             $construct_statement = 'construct {' . $vars . ' }';
             $filter_statement = '{ '. $vars .
-                                ' FILTER( regex(?s, "' . $base_uri . '#.*", "i" ) || regex(?s, "' . $base_uri . '", "i" )). }';
+                                ' FILTER( regex(?s, "^' . $base_uri . '#.*", "i" ) || regex(?s, "^' . $base_uri . '$", "i" )). }';
         }
 
         return $construct_statement . $filter_statement . ' offset ' . $offset . ' limit ' . $limit;
+    }
+
+    /**
+     * Make and return a SPARQL count query, taken into account the passed query string parameters
+     *
+     * @param string $base_uri The base_uri that will serve as a subject in the query
+     *
+     * @return string
+     */
+    public function createVariableCountQuery()
+    {
+        list($s, $p, $o) = $this->query_string_params;
+
+        $select_statement = 'select (count(*) as ?count) ';
+
+        $filter_statement = "{ $s $p $o }";
+
+        return $select_statement . $filter_statement;
+    }
+
+    /**
+     * Creates a query that fetches all of the triples that match with the query sting parameters
+     *
+     * @return string
+     */
+    public function createVariableConstructSparqlQuery($limit = 200, $offset = 0, $depth = 3)
+    {
+        list($s, $p, $o) = $this->query_string_params;
+
+        $construct_statement = "construct { $s $p $o }";
+        $filter_statement = "{ $s $p $o }";
+
+        return $construct_statement . $filter_statement;
     }
 
     /**

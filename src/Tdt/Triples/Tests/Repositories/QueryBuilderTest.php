@@ -12,10 +12,10 @@ class QueryBuilderTest extends \PHPUnit_Framework_TestCase
     {
         $query_builder = new QueryBuilder(array('?s', '?p', '?o'));
 
-        $count_query = $query_builder->createCountQuery('http://foo.test/');
+        $count_query = $query_builder->createCountQuery('http://foo.test');
 
-        $expected_query = 'select (count(*) as ?count) { {?s ?p ?o. FILTER( regex(?s, "http://foo.test/#.*", "i" ) '.
-            '|| regex(?s, "http://foo.test/", "i" ) ). ' .
+        $expected_query = 'select (count(*) as ?count) { {?s ?p ?o. FILTER( regex(?s, "^http://foo.test#.*", "i" ) '.
+            '|| regex(?s, "^http://foo.test$", "i" ) ). ' .
             'OPTIONAL { ?o ?p2 ?o2. ?o2 ?p3 ?o3. }}}';
 
         $this->assertEquals($expected_query, $count_query);
@@ -23,13 +23,13 @@ class QueryBuilderTest extends \PHPUnit_Framework_TestCase
 
     public function testCountQueryWithSubjectParameter()
     {
-        $query_builder = new QueryBuilder(array('<http://foobar.test/>', '?p', '?o'));
+        $query_builder = new QueryBuilder(array('<http://foobar.test>', '?p', '?o'));
 
-        $count_query = $query_builder->createCountQuery('http://foobar.test/');
+        $count_query = $query_builder->createCountQuery('http://foobar.test');
 
-        $expected_query = 'select (count(*) as ?count) { <http://foobar.test/> ?p ?o. '.
-            'FILTER( regex(?s, "http://foobar.test/#.*", "i" )'.
-            ' || regex(?s, "http://foobar.test/", "i" )). }';
+        $expected_query = 'select (count(*) as ?count) { <http://foobar.test> ?p ?o. '.
+            'FILTER( regex(?s, "^http://foobar.test#.*", "i" )'.
+            ' || regex(?s, "^http://foobar.test$", "i" )). }';
 
         $this->assertEquals($expected_query, $count_query);
     }
@@ -38,10 +38,10 @@ class QueryBuilderTest extends \PHPUnit_Framework_TestCase
     {
         $query_builder = new QueryBuilder(array('?s', '<http://foobar/predicate#relationship', '?o'));
 
-        $count_query = $query_builder->createCountQuery('http://foo.test/');
+        $count_query = $query_builder->createCountQuery('http://foo.test');
 
         $expected_query = 'select (count(*) as ?count) { ?s <http://foobar/predicate#relationship ?o. '.
-        'FILTER( regex(?s, "http://foo.test/#.*", "i" ) || regex(?s, "http://foo.test/", "i" )). }';
+        'FILTER( regex(?s, "^http://foo.test#.*", "i" ) || regex(?s, "^http://foo.test$", "i" )). }';
 
         $this->assertEquals($expected_query, $count_query);
     }
@@ -50,10 +50,10 @@ class QueryBuilderTest extends \PHPUnit_Framework_TestCase
     {
         $query_builder = new QueryBuilder(array('?s', '?p', '42'));
 
-        $count_query = $query_builder->createCountQuery('http://foo.test/');
+        $count_query = $query_builder->createCountQuery('http://foo.test');
 
-        $expected_query = 'select (count(*) as ?count) { ?s ?p 42. FILTER( regex(?s, "http://foo.test/#.*", "i" ) '.
-            '|| regex(?s, "http://foo.test/", "i" )). }';
+        $expected_query = 'select (count(*) as ?count) { ?s ?p 42. FILTER( regex(?s, "^http://foo.test#.*", "i" ) '.
+            '|| regex(?s, "^http://foo.test$", "i" )). }';
 
         $this->assertEquals($expected_query, $count_query);
     }
@@ -62,22 +62,22 @@ class QueryBuilderTest extends \PHPUnit_Framework_TestCase
     {
         $query_builder = new QueryBuilder(array('?s', '?p', '?o'));
 
-        $construct_query = $query_builder->createConstructSparqlQuery('http://foo.test/');
+        $construct_query = $query_builder->createConstructSparqlQuery('http://foo.test');
 
-        $expected_query = 'construct {?s ?p ?o.?o ?p2 ?o2. ?o2 ?p3 ?o3. }{ ?s ?p ?o. FILTER( regex(?s, "http://foo.test/#.*", "i" )'.
-        ' || regex(?s, "http://foo.test/", "i" )). OPTIONAL { ?o ?p2 ?o2. ?o2 ?p3 ?o3. }} offset 0 limit 5000';
+        $expected_query = 'construct {?s ?p ?o.?o ?p2 ?o2. ?o2 ?p3 ?o3. }{ ?s ?p ?o. FILTER( regex(?s, "^http://foo.test#.*", "i" )'.
+        ' || regex(?s, "^http://foo.test$", "i" )). OPTIONAL { ?o ?p2 ?o2. ?o2 ?p3 ?o3. }} offset 0 limit 200';
 
         $this->assertEquals($expected_query, $construct_query);
     }
 
     public function testConstructQueryWithSubject()
     {
-        $query_builder = new QueryBuilder(array('<http://foobar.test/>', '?p', '?o'));
+        $query_builder = new QueryBuilder(array('<http://foobar.test>', '?p', '?o'));
 
-        $construct_query = $query_builder->createConstructSparqlQuery('http://foo.test/');
+        $construct_query = $query_builder->createConstructSparqlQuery('http://foo.test');
 
-        $expected_query = 'construct {<http://foobar.test/> ?p ?o. }{ <http://foobar.test/> ?p ?o. '.
-        'FILTER( regex(?s, "http://foo.test/#.*", "i" ) || regex(?s, "http://foo.test/", "i" )). } offset 0 limit 5000';
+        $expected_query = 'construct {<http://foobar.test> ?p ?o. }{ <http://foobar.test> ?p ?o. '.
+        'FILTER( regex(?s, "^http://foo.test#.*", "i" ) || regex(?s, "^http://foo.test$", "i" )). } offset 0 limit 200';
 
         $this->assertEquals($expected_query, $construct_query);
     }
@@ -86,10 +86,10 @@ class QueryBuilderTest extends \PHPUnit_Framework_TestCase
     {
         $query_builder = new QueryBuilder(array('?s', '<http://foobar/predicate#relationship', '?o'));
 
-        $construct_query = $query_builder->createConstructSparqlQuery('http://foo.test/');
+        $construct_query = $query_builder->createConstructSparqlQuery('http://foo.test');
 
         $expected_query = 'construct {?s <http://foobar/predicate#relationship ?o. }{ ?s <http://foobar/predicate#relationship ?o. '.
-        'FILTER( regex(?s, "http://foo.test/#.*", "i" ) || regex(?s, "http://foo.test/", "i" )). } offset 0 limit 5000';
+        'FILTER( regex(?s, "^http://foo.test#.*", "i" ) || regex(?s, "^http://foo.test$", "i" )). } offset 0 limit 200';
 
         $this->assertEquals($expected_query, $construct_query);
     }
@@ -98,11 +98,11 @@ class QueryBuilderTest extends \PHPUnit_Framework_TestCase
     {
         $query_builder = new QueryBuilder(array('?s', '?p', '42'));
 
-        $construct_query = $query_builder->createConstructSparqlQuery('http://foo.test/');
+        $construct_query = $query_builder->createConstructSparqlQuery('http://foo.test');
 
         $expected_query = 'construct {?s ?p 42. }{ ?s ?p 42. '.
-        'FILTER( regex(?s, "http://foo.test/#.*", "i" ) || regex(?s, "http://foo.test/", "i" )). } '.
-        'offset 0 limit 5000';
+        'FILTER( regex(?s, "^http://foo.test#.*", "i" ) || regex(?s, "^http://foo.test$", "i" )). } '.
+        'offset 0 limit 200';
 
         $this->assertEquals($expected_query, $construct_query);
     }

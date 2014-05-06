@@ -108,8 +108,64 @@ class DataController extends \Controller
             }
         }
 
+        // Add the hydra namespace, it's not present in the easy rdf namespaces by default
+        \EasyRdf_Namespace::set('hydra', 'http://www.w3.org/ns/hydra/core#');
+
         // Return the formatted response with content negotiation
         return ContentNegotiator::getResponse($data, $extension);
+    }
+
+    public function solveQuery($format = null)
+    {
+        $data;
+
+        // Get extension
+        $extension = (!empty($matches[2]))? $matches[2]: null;
+
+        // Ignore the rest of the uri after /all
+        $cache_string = sha1(\Request::fullUrl());
+
+        // Check cache
+        if (Cache::has($cache_string)) {
+            $data = Cache::get($cache_string);
+        } else {
+
+            $result = $this->triples->getTriples(null, $this->getTemplateParameters());
+
+            // If the graph contains no triples, then the uri couldn't resolve to anything, 404 it is
+            if ($result->countTriples() == 0) {
+                \App::abort(404, "The resource couldn't be found, nor dereferenced.");
+            }
+
+            $definition = array(
+                'resource_name' => "all",
+                'collection_uri' => "",
+            );
+
+            $source_definition = array(
+                'description' => 'Semantic data collected out the configuration of semantic data sources related to the given URI.',
+                'type' => 'Semantic',
+            );
+
+            $data = new Data();
+            $data->definition = $definition;
+            $data->source_definition = $source_definition;
+            $data->data = $result;
+            $data->is_semantic = true;
+
+            // Add the available, supported formats to the object
+            $format_helper = new FormatHelper();
+            $data->formats = $format_helper->getAvailableFormats($data);
+
+            // Store in cache for a default of 5 minutes
+            Cache::put($cache_string, $data, 5);
+        }
+
+        // Add the hydra namespace, it's not present in the easy rdf namespaces by default
+        \EasyRdf_Namespace::set('hydra', 'http://www.w3.org/ns/hydra/core#');
+
+        // Return the formatted response with content negotiation
+        return ContentNegotiator::getResponse($data, null);
     }
 
     /**
