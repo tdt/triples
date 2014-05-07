@@ -533,7 +533,7 @@ class TripleRepository implements TripleRepositoryInterface
         // Add paging information
         $graph->addLiteral($full_url, 'hydra:totalItems', \EasyRdf_Literal::create($count, null, 'xsd:integer'));
         $graph->addLiteral($full_url, 'void:triples', \EasyRdf_Literal::create($count, null, 'xsd:integer'));
-        $graph->addLiteral($full_url, 'hydra:itemsPerPage', \EasyRdf_Literal::create(100, null, 'xsd:integer'));
+        $graph->addLiteral($full_url, 'hydra:itemsPerPage', \EasyRdf_Literal::create($limit, null, 'xsd:integer'));
 
         $paging_info = $this->getPagingInfo($limit, $offset, $count);
 
