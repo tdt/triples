@@ -523,6 +523,9 @@ class TripleRepository implements TripleRepositoryInterface
         $template_url = rtrim($template_url, '?');
         $template_url = rtrim($template_url, '&');
 
+        $full_url = str_replace('#', '%23', $full_url);
+        $template_url = str_replace('#', '%23', $template_url);
+
         if ($base_uri != $root . 'all') {
             $full_url .= '#dataset';
         }
