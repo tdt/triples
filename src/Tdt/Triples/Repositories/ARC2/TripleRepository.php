@@ -511,13 +511,35 @@ class TripleRepository implements TripleRepositoryInterface
         $templates = array('subject', 'predicate', 'object');
         $has_param = false;
 
-        foreach (\Request::all() as $param => $value) {
-            if (in_array(strtolower($param), $templates)) {
-                $template_url .= $param . '=' . $value . '&';
+        // We need the raw query string
+        $subject = '?s';
+        $predicate = '?p';
+        $object = '?o';
+
+        $query_string = $_SERVER['QUERY_STRING'];
+
+        $query_parts = explode('&', $query_string);
+
+        foreach ($query_parts as $part) {
+
+            $couple = explode('=', $part);
+
+            if (strtolower($couple[0]) ==  'subject') {
+                $template_url .= $couple[0] . '=' . $couple[1] . '&';
                 $has_param = true;
             }
 
-            $full_url .= $param . '=' . $value . '&';
+            if (strtolower($couple[0]) ==  'predicate') {
+                $template_url .= $couple[0] . '=' . $couple[1] . '&';
+                $has_param = true;
+            }
+
+            if (strtolower($couple[0]) ==  'object') {
+                $template_url .= $couple[0] . '=' . $couple[1] . '&';
+                $has_param = true;
+            }
+
+            $full_url .= $couple[0] . '=' . $couple[1] . '&';
         }
 
         $full_url = rtrim($full_url, '?');
