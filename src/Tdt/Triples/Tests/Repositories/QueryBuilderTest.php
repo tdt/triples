@@ -65,7 +65,7 @@ class QueryBuilderTest extends \PHPUnit_Framework_TestCase
         $construct_query = $query_builder->createConstructSparqlQuery('http://foo.test');
 
         $expected_query = 'construct {?s ?p ?o.?o ?p2 ?o2. ?o2 ?p3 ?o3. }{ ?s ?p ?o. FILTER( regex(?s, "^http://foo.test#.*", "i" )'.
-        ' || regex(?s, "^http://foo.test$", "i" )). OPTIONAL { ?o ?p2 ?o2. ?o2 ?p3 ?o3. }} offset 0 limit 200';
+        ' || regex(?s, "^http://foo.test$", "i" )). OPTIONAL { ?o ?p2 ?o2. ?o2 ?p3 ?o3. }} offset 0 limit 100';
 
         $this->assertEquals($expected_query, $construct_query);
     }
@@ -77,7 +77,7 @@ class QueryBuilderTest extends \PHPUnit_Framework_TestCase
         $construct_query = $query_builder->createConstructSparqlQuery('http://foo.test');
 
         $expected_query = 'construct {<http://foobar.test> ?p ?o. }{ <http://foobar.test> ?p ?o. '.
-        'FILTER( regex(?s, "^http://foo.test#.*", "i" ) || regex(?s, "^http://foo.test$", "i" )). } offset 0 limit 200';
+        'FILTER( regex(?s, "^http://foo.test#.*", "i" ) || regex(?s, "^http://foo.test$", "i" )). } offset 0 limit 100';
 
         $this->assertEquals($expected_query, $construct_query);
     }
@@ -89,7 +89,7 @@ class QueryBuilderTest extends \PHPUnit_Framework_TestCase
         $construct_query = $query_builder->createConstructSparqlQuery('http://foo.test');
 
         $expected_query = 'construct {?s <http://foobar/predicate#relationship ?o. }{ ?s <http://foobar/predicate#relationship ?o. '.
-        'FILTER( regex(?s, "^http://foo.test#.*", "i" ) || regex(?s, "^http://foo.test$", "i" )). } offset 0 limit 200';
+        'FILTER( regex(?s, "^http://foo.test#.*", "i" ) || regex(?s, "^http://foo.test$", "i" )). } offset 0 limit 100';
 
         $this->assertEquals($expected_query, $construct_query);
     }
@@ -102,7 +102,7 @@ class QueryBuilderTest extends \PHPUnit_Framework_TestCase
 
         $expected_query = 'construct {?s ?p 42. }{ ?s ?p 42. '.
         'FILTER( regex(?s, "^http://foo.test#.*", "i" ) || regex(?s, "^http://foo.test$", "i" )). } '.
-        'offset 0 limit 200';
+        'offset 0 limit 100';
 
         $this->assertEquals($expected_query, $construct_query);
     }
