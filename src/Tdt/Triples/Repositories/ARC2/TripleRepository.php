@@ -668,10 +668,11 @@ class TripleRepository implements TripleRepositoryInterface
         // Calculate the paging parameters and pass them with the data object
         if ($offset + $limit < $total) {
 
-            $paging['next'] = array('offset' => $limit + $offset, 'limit' => $limit);
+            $paging['next'] = array('offset' => ($limit + $offset), 'limit' => $limit);
 
-            $last_page = round($total / $limit, 0);
-            $paging['last'] = array('offset' => ($last_page) * $limit, 'limit' => $limit);
+            $last_page = ceil($total / $limit);
+
+            $paging['last'] = array('offset' => ($last_page - 1) * $limit, 'limit' => $limit);
         }
 
         if ($offset > 0 && $total > 0) {
