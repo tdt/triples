@@ -32,7 +32,7 @@ class TripleRepository implements TripleRepositoryInterface
      *
      * @return EasyRdf_Graph
      */
-    public function getTriples($base_uri, $parameters, $limit = 200, $offset = 0)
+    public function getTriples($base_uri, $parameters, $limit = 100, $offset = 0)
     {
         // Fetch the query string parameters
         $this->parameters = $parameters;
@@ -40,8 +40,6 @@ class TripleRepository implements TripleRepositoryInterface
         $this->query_builder->setParameters($parameters);
 
         $query = $this->query_builder->createConstructSparqlQuery($base_uri, $limit, $offset);
-
-        //dd($query);
 
         $store = $this->setUpArc2Store();
 
@@ -464,9 +462,6 @@ class TripleRepository implements TripleRepositoryInterface
         \EasyRdf_Namespace::set('void', 'http://rdfs.org/ns/void#');
         \EasyRdf_Namespace::set('dcterms', 'http://purl.org/dc/terms/');
 
-        // Count the graph triples of the entire query (including the parameter strings)
-        $total_graph_triples = $graph->countTriples();
-
         // Add the meta data semantics to the graph
         $root = \Request::root();
         $root .= '/';
@@ -520,8 +515,10 @@ class TripleRepository implements TripleRepositoryInterface
             $fullUrl .= '#dataset';
         }
 
-        $graph->addLiteral($fullUrl, 'hydra:totalItems', \EasyRdf_Literal::create($total_graph_triples, null, 'xsd:integer'));
-        $graph->addLiteral($fullUrl, 'void:triples', \EasyRdf_Literal::create($total_graph_triples, null, 'xsd:integer'));
+        $graph->addLiteral($fullUrl, 'hydra:totalItems', \EasyRdf_Literal::create($count, null, 'xsd:integer'));
+        $graph->addLiteral($fullUrl, 'void:triples', \EasyRdf_Literal::create($count, null, 'xsd:integer'));
+        $graph->addLiteral($fullUrl, 'hydra:itemsPerPage', \EasyRdf_Literal::create(100, null, 'xsd:integer'));
+
         $graph->addResource($root . 'all#dataset', 'void:subset', $fullUrl);
 
         return $graph;

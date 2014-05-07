@@ -148,6 +148,7 @@ class DataController extends \Controller
             );
 
             $data = new Data();
+
             $data->definition = $definition;
             $data->source_definition = $source_definition;
             $data->data = $result;

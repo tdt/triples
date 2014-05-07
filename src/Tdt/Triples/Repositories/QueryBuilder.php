@@ -85,7 +85,7 @@ class QueryBuilder
      *
      * @return string
      */
-    public function createConstructSparqlQuery($base_uri = null, $limit = 200, $offset = 0, $depth = 3)
+    public function createConstructSparqlQuery($base_uri = null, $limit = 100, $offset = 0, $depth = 3)
     {
         list($s, $p, $o) = $this->query_string_params;
 
@@ -136,7 +136,7 @@ class QueryBuilder
     {
         list($s, $p, $o) = $this->query_string_params;
 
-        $select_statement = 'select (count(*) as ?count) ';
+        $select_statement = 'select (count(?s) as ?count) ';
 
         $filter_statement = "{ $s $p $o }";
 
@@ -148,14 +148,14 @@ class QueryBuilder
      *
      * @return string
      */
-    public function createVariableConstructSparqlQuery($limit = 200, $offset = 0, $depth = 3)
+    public function createVariableConstructSparqlQuery($limit = 100, $offset = 0, $depth = 3)
     {
         list($s, $p, $o) = $this->query_string_params;
 
         $construct_statement = "construct { $s $p $o }";
         $filter_statement = "{ $s $p $o }";
 
-        return $construct_statement . $filter_statement;
+        return $construct_statement . $filter_statement . ' offset ' . $offset . ' limit ' . $limit;
     }
 
     /**
