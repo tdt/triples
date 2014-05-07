@@ -130,7 +130,12 @@ class DataController extends \Controller
             $data = Cache::get($cache_string);
         } else {
 
-            $result = $this->triples->getTriples(null, $this->getTemplateParameters());
+            $result = $this->triples->getTriples(
+                null,
+                $this->getTemplateParameters(),
+                \Request::get('limit', 100),
+                \Request::get('offset', 0)
+            );
 
             // If the graph contains no triples, then the uri couldn't resolve to anything, 404 it is
             if ($result->countTriples() == 0) {

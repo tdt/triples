@@ -84,7 +84,7 @@ class TripleRepository implements TripleRepositoryInterface
             // If the fetched triples are negative, this means that we didnt fetch any triples at all
             if ($triples_fetched < 0) {
                 $offset = $triples_fetched * -1;
-                $graph = new EasyRdf_Graph();
+                $graph = new \EasyRdf_Graph();
             } else {
                 // The entire offset has been met in the ARC2 store
                 $offset = 0;
@@ -170,7 +170,7 @@ class TripleRepository implements TripleRepositoryInterface
         }
 
         // Add the void and hydra triples to the resulting graph
-        $graph = $this->addMetaTriples($base_uri, $graph, $total_triples_count);
+        $graph = $this->addMetaTriples($base_uri, $graph, $limit, $offset, $total_triples_count);
 
         return $graph;
     }
@@ -455,7 +455,7 @@ class TripleRepository implements TripleRepositoryInterface
      *
      * @return EasyRdf_Graph $graph
      */
-    private function addMetaTriples($base_uri, $graph, $count)
+    private function addMetaTriples($base_uri, $graph, $limit, $offset, $count)
     {
         // Add the void and hydra namespace to the EasyRdf framework
         \EasyRdf_Namespace::set('hydra', 'http://www.w3.org/ns/hydra/core#');
@@ -504,9 +504,14 @@ class TripleRepository implements TripleRepositoryInterface
         $graph->addResource($base_uri . '#dataset', 'hydra:search', $iri_template);
 
         $fullUrl = $base_uri . '?';
+        $templates = array('subject', 'predicate', 'object');
+        $has_param = false;
 
         foreach (\Request::all() as $param => $value) {
-            $fullUrl .= $param . '=' . $value . '&';
+            if (in_array(strtolower($param), $templates)) {
+                $fullUrl .= $param . '=' . $value . '&';
+                $has_param = true;
+            }
         }
 
         $fullUrl = rtrim($fullUrl, '?');
@@ -516,10 +521,56 @@ class TripleRepository implements TripleRepositoryInterface
             $fullUrl .= '#dataset';
         }
 
+        // Add paging information
         $graph->addLiteral($fullUrl, 'hydra:totalItems', \EasyRdf_Literal::create($count, null, 'xsd:integer'));
         $graph->addLiteral($fullUrl, 'void:triples', \EasyRdf_Literal::create($count, null, 'xsd:integer'));
         $graph->addLiteral($fullUrl, 'hydra:itemsPerPage', \EasyRdf_Literal::create(100, null, 'xsd:integer'));
 
+        $paging_info = $this->getPagingInfo($limit, $offset, $count);
+
+        foreach ($paging_info as $key => $info) {
+
+            switch($key) {
+                case 'next':
+                    if ($has_param) {
+                        $glue = '&';
+                    } else {
+                        $glue = '?';
+                    }
+
+                    $graph->addResource($fullUrl, 'hydra:nextPage', $fullUrl . $glue . 'limit=' . $info['limit'] . '&offset=' . $info['offset']);
+                    break;
+                case 'previous':
+                    if ($has_param) {
+                        $glue = '&';
+                    } else {
+                        $glue = '?';
+                    }
+
+                    $graph->addResource($fullUrl, 'hydra:previousPage', $fullUrl . $glue . 'limit=' . $info['limit'] . '&offset=' . $info['offset']);
+                    break;
+                case 'last':
+                    if ($has_param) {
+                        $glue = '&';
+                    } else {
+                        $glue = '?';
+                    }
+
+                    $graph->addResource($fullUrl, 'hydra:lastPage', $fullUrl . $glue . 'limit=' . $info['limit'] . '&offset=' . $info['offset']);
+                    break;
+                case 'first':
+                    if ($has_param) {
+                        $glue = '&';
+                    } else {
+                        $glue = '?';
+                    }
+
+                    $graph->addResource($fullUrl, 'hydra:firstPage', $fullUrl . $glue . 'limit=' . $info['limit'] . '&offset=' . $info['offset']);
+                    break;
+            }
+        }
+
+        // Tell the agent that it's a subset
         $graph->addResource($root . 'all#dataset', 'void:subset', $fullUrl);
 
         return $graph;
@@ -587,6 +638,43 @@ class TripleRepository implements TripleRepositoryInterface
         }
 
         return $triples_amount;
+    }
+
+    /**
+     * return paging headers
+     *
+     * @param integer $limit  The size of a page
+     * @param integer $offset The offset of search result
+     * @param integer $total  The total amount of results
+     *
+     * @return array
+     */
+    private function getPagingInfo($limit, $offset, $total)
+    {
+        $paging = array();
+
+        // Add the first page
+        $paging['first'] = array('limit' => $limit, 'offset' => 0);
+
+        // Calculate the paging parameters and pass them with the data object
+        if ($offset + $limit < $total) {
+
+            $paging['next'] = array('offset' => $limit + $offset, 'limit' => $limit);
+
+            $last_page = round($total / $limit, 0);
+            $paging['last'] = array('offset' => ($last_page) * $limit, 'limit' => $limit);
+        }
+
+        if ($offset > 0 && $total > 0) {
+            $previous = $offset - $limit;
+            if ($previous < 0) {
+                $previous = 0;
+            }
+
+            $paging['previous'] = array('offset' => $previous, 'limit' => $limit);
+        }
+
+        return $paging;
     }
 
     /**

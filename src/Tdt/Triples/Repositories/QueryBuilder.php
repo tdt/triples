@@ -90,7 +90,7 @@ class QueryBuilder
         list($s, $p, $o) = $this->query_string_params;
 
         if (empty($base_uri)) {
-            return $this->createVariableConstructSparqlQuery();
+            return $this->createVariableConstructSparqlQuery($limit, $offset);
         }
 
         $vars = $s . ' ' . $p . ' ' . $o . '.';
