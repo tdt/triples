@@ -34,6 +34,9 @@ class TripleRepository implements TripleRepositoryInterface
      */
     public function getTriples($base_uri, $parameters, $limit = 100, $offset = 0)
     {
+        $original_limit = $limit;
+        $original_offset = $offset;
+
         // Fetch the query string parameters
         $this->parameters = $parameters;
 
@@ -170,7 +173,7 @@ class TripleRepository implements TripleRepositoryInterface
         }
 
         // Add the void and hydra triples to the resulting graph
-        $graph = $this->addMetaTriples($base_uri, $graph, $limit, $offset, $total_triples_count);
+        $graph = $this->addMetaTriples($base_uri, $graph, $original_limit, $original_offset, $total_triples_count);
 
         return $graph;
     }
@@ -668,6 +671,9 @@ class TripleRepository implements TripleRepositoryInterface
         // Calculate the paging parameters and pass them with the data object
         if ($offset + $limit < $total) {
 
+            var_dump($limit);
+            var_dump($offset);
+            dd($total);
             $paging['next'] = array('offset' => ($limit + $offset), 'limit' => $limit);
 
             $last_page = ceil($total / $limit);
