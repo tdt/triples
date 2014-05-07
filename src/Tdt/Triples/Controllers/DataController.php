@@ -119,6 +119,10 @@ class DataController extends \Controller
     {
         $data;
 
+        if (!empty($format)) {
+            $format = ltrim($format, '.');
+        }
+
         // Get extension
         $extension = (!empty($matches[2]))? $matches[2]: null;
 
@@ -171,7 +175,7 @@ class DataController extends \Controller
         \EasyRdf_Namespace::set('hydra', 'http://www.w3.org/ns/hydra/core#');
 
         // Return the formatted response with content negotiation
-        return ContentNegotiator::getResponse($data, null);
+        return ContentNegotiator::getResponse($data, $format);
     }
 
     /**

@@ -503,28 +503,34 @@ class TripleRepository implements TripleRepositoryInterface
         // Add the template to the requested URI resource in the graph
         $graph->addResource($base_uri . '#dataset', 'hydra:search', $iri_template);
 
-        $fullUrl = $base_uri . '?';
+        $full_url = $base_uri . '?';
+        $template_url = $full_url;
         $templates = array('subject', 'predicate', 'object');
         $has_param = false;
 
         foreach (\Request::all() as $param => $value) {
             if (in_array(strtolower($param), $templates)) {
-                $fullUrl .= $param . '=' . $value . '&';
+                $template_url .= $param . '=' . $value . '&';
                 $has_param = true;
             }
+
+            $full_url .= $param . '=' . $value . '&';
         }
 
-        $fullUrl = rtrim($fullUrl, '?');
-        $fullUrl = rtrim($fullUrl, '&');
+        $full_url = rtrim($full_url, '?');
+        $full_url = rtrim($full_url, '&');
+
+        $template_url = rtrim($template_url, '?');
+        $template_url = rtrim($template_url, '&');
 
         if ($base_uri != $root . 'all') {
-            $fullUrl .= '#dataset';
+            $full_url .= '#dataset';
         }
 
         // Add paging information
-        $graph->addLiteral($fullUrl, 'hydra:totalItems', \EasyRdf_Literal::create($count, null, 'xsd:integer'));
-        $graph->addLiteral($fullUrl, 'void:triples', \EasyRdf_Literal::create($count, null, 'xsd:integer'));
-        $graph->addLiteral($fullUrl, 'hydra:itemsPerPage', \EasyRdf_Literal::create(100, null, 'xsd:integer'));
+        $graph->addLiteral($full_url, 'hydra:totalItems', \EasyRdf_Literal::create($count, null, 'xsd:integer'));
+        $graph->addLiteral($full_url, 'void:triples', \EasyRdf_Literal::create($count, null, 'xsd:integer'));
+        $graph->addLiteral($full_url, 'hydra:itemsPerPage', \EasyRdf_Literal::create(100, null, 'xsd:integer'));
 
         $paging_info = $this->getPagingInfo($limit, $offset, $count);
 
@@ -538,7 +544,7 @@ class TripleRepository implements TripleRepositoryInterface
                         $glue = '?';
                     }
 
-                    $graph->addResource($fullUrl, 'hydra:nextPage', $fullUrl . $glue . 'limit=' . $info['limit'] . '&offset=' . $info['offset']);
+                    $graph->addResource($full_url, 'hydra:nextPage', $template_url . $glue . 'limit=' . $info['limit'] . '&offset=' . $info['offset']);
                     break;
                 case 'previous':
                     if ($has_param) {
@@ -547,7 +553,7 @@ class TripleRepository implements TripleRepositoryInterface
                         $glue = '?';
                     }
 
-                    $graph->addResource($fullUrl, 'hydra:previousPage', $fullUrl . $glue . 'limit=' . $info['limit'] . '&offset=' . $info['offset']);
+                    $graph->addResource($full_url, 'hydra:previousPage', $template_url . $glue . 'limit=' . $info['limit'] . '&offset=' . $info['offset']);
                     break;
                 case 'last':
                     if ($has_param) {
@@ -556,7 +562,7 @@ class TripleRepository implements TripleRepositoryInterface
                         $glue = '?';
                     }
 
-                    $graph->addResource($fullUrl, 'hydra:lastPage', $fullUrl . $glue . 'limit=' . $info['limit'] . '&offset=' . $info['offset']);
+                    $graph->addResource($full_url, 'hydra:lastPage', $template_url . $glue . 'limit=' . $info['limit'] . '&offset=' . $info['offset']);
                     break;
                 case 'first':
                     if ($has_param) {
@@ -565,13 +571,13 @@ class TripleRepository implements TripleRepositoryInterface
                         $glue = '?';
                     }
 
-                    $graph->addResource($fullUrl, 'hydra:firstPage', $fullUrl . $glue . 'limit=' . $info['limit'] . '&offset=' . $info['offset']);
+                    $graph->addResource($full_url, 'hydra:firstPage', $template_url . $glue . 'limit=' . $info['limit'] . '&offset=' . $info['offset']);
                     break;
             }
         }
 
         // Tell the agent that it's a subset
-        $graph->addResource($root . 'all#dataset', 'void:subset', $fullUrl);
+        $graph->addResource($root . 'all#dataset', 'void:subset', $full_url);
 
         return $graph;
     }

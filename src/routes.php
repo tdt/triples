@@ -8,7 +8,7 @@
 */
 Route::get('all{format?}', 'Tdt\Triples\Controllers\DataController@solveQuery')
 
-->where('format', '\.[a-zA-Z]');
+->where('format', '\.?[a-zA-Z]*');
 
 Route::get('{dereferenced_uri}', 'Tdt\Triples\Controllers\DataController@resolve')
 
