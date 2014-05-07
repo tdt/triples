@@ -506,10 +506,11 @@ class TripleRepository implements TripleRepositoryInterface
         $fullUrl = $base_uri . '?';
 
         foreach (\Request::all() as $param => $value) {
-            $fullUrl .= $param . '=' . $value;
+            $fullUrl .= $param . '=' . $value . '&';
         }
 
         $fullUrl = rtrim($fullUrl, '?');
+        $fullUrl = rtrim($fullUrl, '&');
 
         if ($base_uri != $root . 'all') {
             $fullUrl .= '#dataset';
