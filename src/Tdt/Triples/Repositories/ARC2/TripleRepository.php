@@ -603,9 +603,11 @@ class TripleRepository implements TripleRepositoryInterface
 
         $result = $store->query($count_query, 'raw');
 
-        $arc2_triples_count = $result['rows'][0]['count'];
+        if (!empty($result['rows'])) {
+            return $result['rows'][0]['count'];
+        }
 
-        return $arc2_triples_count;
+        return 0;
     }
 
     /**

@@ -136,7 +136,7 @@ class QueryBuilder
     {
         list($s, $p, $o) = $this->query_string_params;
 
-        $select_statement = 'select (count(?s) as ?count) ';
+        $select_statement = 'select (count(*) as ?count) ';
 
         $filter_statement = "{ $s $p $o }";
 
