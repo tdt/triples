@@ -61,7 +61,7 @@ class DataController extends \Controller
 
         } else {
 
-            $cache_string = sha1($this->getRawRequestURI());
+            $cache_string = sha1($this->getRawRequestURI(\Request::root()));
 
             // Check cache
             if (Cache::has($cache_string)) {
@@ -127,7 +127,7 @@ class DataController extends \Controller
         $extension = (!empty($matches[2]))? $matches[2]: null;
 
         // Ignore the rest of the uri after /all
-        $cache_string = sha1($this->getRawRequestURI());
+        $cache_string = sha1($this->getRawRequestURI(\Request::root()));
 
         // Check cache
         if (Cache::has($cache_string)) {
@@ -211,17 +211,17 @@ class DataController extends \Controller
         return array($s, $p, $o);
     }
 
-    private function getRawRequestURI()
+    /**
+     * Return the original request URI, root stays the same, query string parameters are
+     * return as they were in the correct order, without encoding/decoding changes
+     *
+     * @param string $root The root URI of the request
+     *
+     * @return string
+     */
+    public function getRawRequestURI($root)
     {
-        // Add the meta data semantics to the graph
-        $root = \Request::root();
-        $root .= '/';
-
-        if (empty($base_uri)) {
-            $base_uri = $root . 'all';
-        }
-
-        $full_url = $base_uri . '?';
+        $full_url = $root . '/all?';
 
         $query_string = $_SERVER['QUERY_STRING'];
 
@@ -230,22 +230,8 @@ class DataController extends \Controller
         foreach ($query_parts as $part) {
 
             if (!empty($part)) {
+
                 $couple = explode('=', $part);
-
-                if (strtolower($couple[0]) ==  'subject') {
-
-                    $has_param = true;
-                }
-
-                if (strtolower($couple[0]) ==  'predicate') {
-
-                    $has_param = true;
-                }
-
-                if (strtolower($couple[0]) ==  'object') {
-
-                    $has_param = true;
-                }
 
                 $full_url .= $couple[0] . '=' . $couple[1] . '&';
             }

@@ -458,7 +458,7 @@ class TripleRepository implements TripleRepositoryInterface
      *
      * @return EasyRdf_Graph $graph
      */
-    private function addMetaTriples($base_uri, $graph, $limit, $offset, $count)
+    public function addMetaTriples($base_uri, $graph, $limit, $offset, $count)
     {
         // Add the void and hydra namespace to the EasyRdf framework
         \EasyRdf_Namespace::set('hydra', 'http://www.w3.org/ns/hydra/core#');
@@ -511,11 +511,6 @@ class TripleRepository implements TripleRepositoryInterface
         $templates = array('subject', 'predicate', 'object');
         $has_param = false;
 
-        // We need the raw query string
-        $subject = '?s';
-        $predicate = '?p';
-        $object = '?o';
-
         $query_string = $_SERVER['QUERY_STRING'];
 
         $query_parts = explode('&', $query_string);
@@ -523,6 +518,7 @@ class TripleRepository implements TripleRepositoryInterface
         foreach ($query_parts as $part) {
 
             if (!empty($part)) {
+
                 $couple = explode('=', $part);
 
                 if (strtolower($couple[0]) ==  'subject') {
