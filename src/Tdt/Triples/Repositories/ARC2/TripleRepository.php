@@ -522,24 +522,26 @@ class TripleRepository implements TripleRepositoryInterface
 
         foreach ($query_parts as $part) {
 
-            $couple = explode('=', $part);
+            if (!empty($part)) {
+                $couple = explode('=', $part);
 
-            if (strtolower($couple[0]) ==  'subject') {
-                $template_url .= $couple[0] . '=' . $couple[1] . '&';
-                $has_param = true;
+                if (strtolower($couple[0]) ==  'subject') {
+                    $template_url .= $couple[0] . '=' . $couple[1] . '&';
+                    $has_param = true;
+                }
+
+                if (strtolower($couple[0]) ==  'predicate') {
+                    $template_url .= $couple[0] . '=' . $couple[1] . '&';
+                    $has_param = true;
+                }
+
+                if (strtolower($couple[0]) ==  'object') {
+                    $template_url .= $couple[0] . '=' . $couple[1] . '&';
+                    $has_param = true;
+                }
+
+                $full_url .= $couple[0] . '=' . $couple[1] . '&';
             }
-
-            if (strtolower($couple[0]) ==  'predicate') {
-                $template_url .= $couple[0] . '=' . $couple[1] . '&';
-                $has_param = true;
-            }
-
-            if (strtolower($couple[0]) ==  'object') {
-                $template_url .= $couple[0] . '=' . $couple[1] . '&';
-                $has_param = true;
-            }
-
-            $full_url .= $couple[0] . '=' . $couple[1] . '&';
         }
 
         $full_url = rtrim($full_url, '?');
