@@ -61,7 +61,7 @@ class DataController extends \Controller
 
         } else {
 
-            $cache_string = sha1(\Request::fullUrl());
+            $cache_string = sha1($this->getRawRequestURI());
 
             // Check cache
             if (Cache::has($cache_string)) {
@@ -127,7 +127,7 @@ class DataController extends \Controller
         $extension = (!empty($matches[2]))? $matches[2]: null;
 
         // Ignore the rest of the uri after /all
-        $cache_string = sha1(\Request::fullUrl());
+        $cache_string = sha1($this->getRawRequestURI());
 
         // Check cache
         if (Cache::has($cache_string)) {
@@ -209,6 +209,55 @@ class DataController extends \Controller
         }
 
         return array($s, $p, $o);
+    }
+
+    private function getRawRequestURI()
+    {
+        // Add the meta data semantics to the graph
+        $root = \Request::root();
+        $root .= '/';
+
+        if (empty($base_uri)) {
+            $base_uri = $root . 'all';
+        }
+
+        $full_url = $base_uri . '?';
+
+        $query_string = $_SERVER['QUERY_STRING'];
+
+        $query_parts = explode('&', $query_string);
+
+        foreach ($query_parts as $part) {
+
+            if (!empty($part)) {
+                $couple = explode('=', $part);
+
+                if (strtolower($couple[0]) ==  'subject') {
+
+                    $has_param = true;
+                }
+
+                if (strtolower($couple[0]) ==  'predicate') {
+
+                    $has_param = true;
+                }
+
+                if (strtolower($couple[0]) ==  'object') {
+
+                    $has_param = true;
+                }
+
+                $full_url .= $couple[0] . '=' . $couple[1] . '&';
+            }
+        }
+
+        $full_url = rtrim($full_url, '?');
+        $full_url = rtrim($full_url, '&');
+
+
+        $full_url = str_replace('#', '%23', $full_url);
+
+        return $full_url;
     }
 
     /**
