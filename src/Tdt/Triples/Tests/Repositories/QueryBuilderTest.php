@@ -106,4 +106,29 @@ class QueryBuilderTest extends \PHPUnit_Framework_TestCase
 
         $this->assertEquals($expected_query, $construct_query);
     }
+
+    public function testConstructQueryWithNamedGraph()
+    {
+        $query_builder = new QueryBuilder(array('?s', '?p', '?o'));
+
+        $construct_query = $query_builder->createConstructSparqlQuery('http://foo.test', 'http://foo.test/namedgraph#version1');
+
+        $expected_query = 'construct {?s ?p ?o.?o ?p2 ?o2. ?o2 ?p3 ?o3. } FROM <http://foo.test/namedgraph#version1>{ ?s ?p ?o. FILTER( regex(?s, "^http://foo.test#.*", "i" )'.
+        ' || regex(?s, "^http://foo.test$", "i" )). OPTIONAL { ?o ?p2 ?o2. ?o2 ?p3 ?o3. }} offset 0 limit 100';
+
+        $this->assertEquals($expected_query, $construct_query);
+    }
+
+    public function testCountQueryWithNamedGraph()
+    {
+        $query_builder = new QueryBuilder(array('?s', '?p', '?o'));
+
+        $count_query = $query_builder->createCountQuery('http://foo.test', 'http://foo.test/namedgraph#version1');
+
+        $expected_query = 'select (count(*) as ?count) FROM <http://foo.test/namedgraph#version1> { {?s ?p ?o. FILTER( regex(?s, "^http://foo.test#.*", "i" ) '.
+            '|| regex(?s, "^http://foo.test$", "i" ) ). ' .
+            'OPTIONAL { ?o ?p2 ?o2. ?o2 ?p3 ?o3. }}}';
+
+        $this->assertEquals($expected_query, $count_query);
+    }
 }
