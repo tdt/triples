@@ -62,7 +62,7 @@ class QueryBuilderTest extends \PHPUnit_Framework_TestCase
     {
         $query_builder = new QueryBuilder(array('?s', '?p', '?o'));
 
-        $construct_query = $query_builder->createConstructSparqlQuery('http://foo.test', 150);
+        $construct_query = $query_builder->createConstructSparqlQuery('http://foo.test', null, 150);
 
         $expected_query = 'construct {?s ?p ?o.?o ?p2 ?o2. ?o2 ?p3 ?o3. }{ ?s ?p ?o. FILTER( regex(?s, "^http://foo.test#.*", "i" )'.
         ' || regex(?s, "^http://foo.test$", "i" )). OPTIONAL { ?o ?p2 ?o2. ?o2 ?p3 ?o3. }} offset 0 limit 150';

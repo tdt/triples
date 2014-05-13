@@ -26,16 +26,17 @@ class SparqlQueryBuilder
     /**
      * Make and return a SPARQL count query, taken into account the passed query string parameters
      *
-     * @param string $base_uri The base_uri that will serve as a subject in the query
+     * @param string $base_uri    The base_uri that will serve as a subject in the query
+     * @param string $graph_name The name of the graph to take into account for the query
      *
      * @return string
      */
-    public function createCountQuery($base_uri = null)
+    public function createCountQuery($base_uri = null, $graph_name = null)
     {
         list($s, $p, $o) = $this->query_string_params;
 
         if (empty($base_uri)) {
-            return $this->createVariableCountQuery();
+            return $this->createVariableCountQuery($graph_name);
         }
 
         // If subject has been passed, it should be the same as the base_uri
@@ -62,7 +63,11 @@ class SparqlQueryBuilder
                 $last_object = '?o' . $i;
             }
 
-            $select_statement = 'select (count(*) as ?count) ';
+            if (!empty($graph_name)) {
+                $select_statement = 'select (count(*) as ?count) FROM <' . $graph_name . '> ';
+            } else {
+                $select_statement = 'select (count(*) as ?count) ';
+            }
 
             $filter_statement = '{ {'. $vars .
             ' FILTER( regex(?s, "^' . $base_uri . '#.*", "i" ) || regex(?s, "^' . $base_uri . '$", "i" ) ). ' .
@@ -85,12 +90,12 @@ class SparqlQueryBuilder
      *
      * @return string
      */
-    public function createConstructSparqlQuery($base_uri = null, $limit = 100, $offset = 0, $depth = 3)
+    public function createConstructSparqlQuery($base_uri = null, $graph_name = null, $limit = 100, $offset = 0, $depth = 3)
     {
         list($s, $p, $o) = $this->query_string_params;
 
         if (empty($base_uri)) {
-            return $this->createVariableConstructSparqlQuery($limit, $offset);
+            return $this->createVariableConstructSparqlQuery($graph_name, $limit, $offset);
         }
 
         $vars = $s . ' ' . $p . ' ' . $o . '.';
@@ -111,7 +116,12 @@ class SparqlQueryBuilder
                 $last_object = '?o' . $i;
             }
 
-            $construct_statement = 'construct {' . $vars . $depth_vars . '}';
+            if (!empty($graph_name)) {
+                $construct_statement = 'construct {' . $vars . $depth_vars . '} FROM <' . $graph_name . '>';
+            } else {
+                $construct_statement = 'construct {' . $vars . $depth_vars . '}';
+            }
+
             $filter_statement = '{ '. $vars .
                                 ' FILTER( regex(?s, "^' . $base_uri . '#.*", "i" ) || regex(?s, "^' . $base_uri . '$", "i" )). ' .
                                 'OPTIONAL { ' . $depth_vars . '}}';
@@ -128,15 +138,19 @@ class SparqlQueryBuilder
     /**
      * Make and return a SPARQL count query, taken into account the passed query string parameters
      *
-     * @param string $base_uri The base_uri that will serve as a subject in the query
+     * @param string $graph_name The graph_name that will be taken into account in the query
      *
      * @return string
      */
-    public function createVariableCountQuery()
+    public function createVariableCountQuery($graph_name = null)
     {
         list($s, $p, $o) = $this->query_string_params;
 
-        $select_statement = 'select (count(*) as ?count) ';
+        if (!empty($graph_name)) {
+            $select_statement = 'select (count(*) as ?count) FROM <' . $graph_name . '> ';
+        } else {
+            $select_statement = 'select (count(*) as ?count) ';
+        }
 
         $filter_statement = "{ $s $p $o }";
 
@@ -148,11 +162,16 @@ class SparqlQueryBuilder
      *
      * @return string
      */
-    public function createVariableConstructSparqlQuery($limit = 100, $offset = 0, $depth = 3)
+    public function createVariableConstructSparqlQuery($graph_name = null, $limit = 100, $offset = 0, $depth = 3)
     {
         list($s, $p, $o) = $this->query_string_params;
 
-        $construct_statement = "construct { $s $p $o }";
+        if (!empty($graph_name)) {
+            $construct_statement = "construct { $s $p $o } FROM <" . $graph_name . ">";
+        } else {
+            $construct_statement = "construct { $s $p $o }";
+        }
+
         $filter_statement = "{ $s $p $o }";
 
         return $construct_statement . $filter_statement . ' offset ' . $offset . ' limit ' . $limit;

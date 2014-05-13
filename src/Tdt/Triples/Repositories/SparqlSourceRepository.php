@@ -69,6 +69,12 @@ class SparqlSourceRepository extends BaseSourceRepository implements SparqlSourc
                 'type' => 'integer',
                 'default_value' => 3
             ),
+            'named_graph' => array(
+                'required' => false,
+                'name' => 'Named graph',
+                'description' => 'The name of the named graph that should be included to resolve triples.',
+                'type' => 'string'
+            ),
         );
     }
 }

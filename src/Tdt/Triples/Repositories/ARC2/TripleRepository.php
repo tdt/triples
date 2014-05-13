@@ -42,7 +42,7 @@ class TripleRepository implements TripleRepositoryInterface
 
         $this->query_builder->setParameters($parameters);
 
-        $query = $this->query_builder->createConstructSparqlQuery($base_uri, $limit, $offset);
+        $query = $this->query_builder->createConstructSparqlQuery($base_uri, null, $limit, $offset);
 
         $store = $this->setUpArc2Store();
 
@@ -107,7 +107,7 @@ class TripleRepository implements TripleRepositoryInterface
 
                     $endpoint = rtrim($endpoint, '/');
 
-                    $count_query = $this->query_builder->createCountQuery($base_uri);
+                    $count_query = $this->query_builder->createCountQuery($base_uri, $sparql_source['named_graph']);
 
                     $count_query = urlencode($count_query);
                     $count_query = str_replace("+", "%20", $count_query);
@@ -130,9 +130,10 @@ class TripleRepository implements TripleRepositoryInterface
                             // Read the triples from the sparql endpoint
                             $query_limit = $limit - $total_triples;
 
-                            $query = $this->query_builder->createConstructSparqlQuery($base_uri, $query_limit, $offset);
+                            $query = $this->query_builder->createConstructSparqlQuery($base_uri, $sparql_source['named_graph'], $query_limit, $offset);
 
                             $query = urlencode($query);
+
                             $query = str_replace("+", "%20", $query);
 
                             $query_uri = $endpoint . '?query=' . $query . '&format=' . urlencode("application/rdf+xml");
@@ -210,6 +211,7 @@ class TripleRepository implements TripleRepositoryInterface
                     $response = $this->executeUri($entire_fragment, $accept);
 
                     if ($response) {
+
                         // Try decoding it into turtle, if not something is wrong with the response body
                         try {
 
@@ -871,7 +873,7 @@ class TripleRepository implements TripleRepositoryInterface
             $endpoint = rtrim($endpoint, '/');
 
             // Create the count query
-            $count_query = $this->query_builder->createCountQuery($base_uri);
+            $count_query = $this->query_builder->createCountQuery($base_uri, $sparql_source['named_graph']);
 
             $count_query = urlencode($count_query);
             $count_query = str_replace("+", "%20", $count_query);
