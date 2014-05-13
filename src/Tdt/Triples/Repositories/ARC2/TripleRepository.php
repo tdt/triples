@@ -343,12 +343,23 @@ class TripleRepository implements TripleRepositoryInterface
     private function rebaseGraph($start_fragment, $graph)
     {
         // Filter out the #dataset meta-data (if present) and change the URI's to our base URI
+        $collections = $graph->allOfType('hydra:Collection');
+
+        // Fetch all of the subject URI's that bring forth hydra meta-data (and are thus irrelevant)
+        $ignore_subjects = array();
+
+        if (empty($collection)) {
+            $collections = $graph->allOfType('hydra:PagedCollection');
+        }
+
+        if (!empty($collections)) {
+            foreach ($collections as $collection) {
+                array_push($ignore_subjects, $collection->getUri());
+            }
+        }
 
         // Fetch the bnode of the hydra mapping (property is hydra:search)
         $hydra_mapping = $graph->getResource($start_fragment . '#dataset', 'hydra:search');
-
-        // Fetch all of the bnodes that the hydra mapping occupies
-        $ignore_subjects = array();
 
         if (!empty($hydra_mapping)) {
 
