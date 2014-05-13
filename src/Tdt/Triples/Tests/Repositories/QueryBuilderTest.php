@@ -3,7 +3,7 @@
 namespace Tdt\Triples\Tests\Repositories;
 
 use Tdt\Triples\Repositories\ARC2\TripleRepository;
-use Tdt\Triples\Repositories\QueryBuilder;
+use Tdt\Triples\Repositories\SparqlQueryBuilder as QueryBuilder;
 
 class QueryBuilderTest extends \PHPUnit_Framework_TestCase
 {

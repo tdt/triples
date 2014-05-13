@@ -2,7 +2,7 @@
 
 namespace Tdt\Triples\Repositories;
 
-class QueryBuilder
+class SparqlQueryBuilder
 {
     private static $depth = 3;
 

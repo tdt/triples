@@ -59,6 +59,11 @@ class TriplesServiceProvider extends ServiceProvider
             'Tdt\Triples\Repositories\SparqlSourceRepository'
         );
 
+        $this->app->bind(
+            'Tdt\Triples\Repositories\Interfaces\LdfSourceRepositoryInterface',
+            'Tdt\Triples\Repositories\LdfSourceRepository'
+        );
+
         $this->app['triples.load'] = $this->app->share(function ($app) {
             return new CacheTriples();
         });
