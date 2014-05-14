@@ -5,6 +5,7 @@ namespace Tdt\Triples\Repositories\ARC2;
 use Tdt\Triples\Repositories\Interfaces\TripleRepositoryInterface;
 use Tdt\Triples\Repositories\Interfaces\SemanticSourceRepositoryInterface;
 use Tdt\Triples\Repositories\SparqlQueryBuilder;
+use Tdt\Core\Cache\Cache;
 
 class TripleRepository implements TripleRepositoryInterface
 {
@@ -45,9 +46,9 @@ class TripleRepository implements TripleRepositoryInterface
         $query = '';
 
         if (!empty($base_uri) && $base_uri != \Request::root()) {
-            $query = $this->query_builder->createConstructSparqlQuery($base_uri, null, $limit, $offset);
+            $query = $this->query_builder->createFetchQuery($base_uri, null, $limit, $offset);
         } else {
-            $query = $this->query_builder->createAllSparqlQuery(
+            $query = $this->query_builder->createFetchAllQuery(
                 \Request::root(),
                 null,
                 $limit,
@@ -125,19 +126,30 @@ class TripleRepository implements TripleRepositoryInterface
                             $sparql_source['depth']
                         );
                     } else {
-                        $count_query = $this->query_builder->createAllCountQuery(
+                        $count_query = $this->query_builder->createCountAllQuery(
                             \Request::root(),
                             $sparql_source['named_graph'],
                             $sparql_source['depth']
                         );
                     }
 
-                    $count_query = urlencode($count_query);
-                    $count_query = str_replace("+", "%20", $count_query);
+                    // Check for caching
+                    $cache_string = $this->buildCacheString('sparql', $sparql_source['id'], $count_query);
 
-                    $query_uri = $endpoint . '?query=' . $count_query . '&format=' . urlencode("application/sparql-results+json");
+                    if (Cache::has($cache_string)) {
+                        $result = Cache::get($cache_string);
+                    } else {
 
-                    $result = $this->executeUri($query_uri, array(), $user, $pw);
+                        $count_query = urlencode($count_query);
+                        $count_query = str_replace("+", "%20", $count_query);
+
+                        $query_uri = $endpoint . '?query=' . $count_query . '&format=' . urlencode("application/sparql-results+json");
+
+                        // Make a request with the count query to the SPARQL endpoint
+                        $result = $this->executeUri($query_uri, array(), $user, $pw);
+
+                        Cache::put($cache_string, $result, 5);
+                    }
 
                     $response = json_decode($result);
 
@@ -154,7 +166,7 @@ class TripleRepository implements TripleRepositoryInterface
                             $query_limit = $limit - $total_triples;
 
                             if (!empty($base_uri) && $base_uri != \Request::root()) {
-                                $query = $this->query_builder->createConstructSparqlQuery(
+                                $query = $this->query_builder->createFetchQuery(
                                     $base_uri,
                                     $sparql_source['named_graph'],
                                     $query_limit,
@@ -162,7 +174,7 @@ class TripleRepository implements TripleRepositoryInterface
                                     $sparql_source['depth']
                                 );
                             } else {
-                                $query = $this->query_builder->createAllSparqlQuery(
+                                $query = $this->query_builder->createFetchAllQuery(
                                     \Request::root(),
                                     $sparql_source['named_graph'],
                                     $query_limit,
@@ -928,26 +940,38 @@ class TripleRepository implements TripleRepositoryInterface
             // 2. No base uri is given, no parameters are passed, return all triples + count for which the root uri is a subject
 
             if (!empty($base_uri) && $base_uri != \Request::root()) {
+
                 $count_query = $this->query_builder->createCountQuery(
                     $base_uri,
                     $sparql_source['named_graph'],
                     $sparql_source['depth']
                 );
             } else {
-                $count_query = $this->query_builder->createAllCountQuery(
+
+                $count_query = $this->query_builder->createCountAllQuery(
                     \Request::root(),
                     $sparql_source['named_graph'],
                     $sparql_source['depth']
                 );
             }
 
-            $count_query = urlencode($count_query);
-            $count_query = str_replace("+", "%20", $count_query);
+            // Check for caching
+            $cache_string = $this->buildCacheString('sparql', $sparql_source['id'], $count_query);
 
-            $query_uri = $endpoint . '?query=' . $count_query . '&format=' . urlencode("application/sparql-results+json");
+            if (Cache::has($cache_string)) {
+                $result = Cache::get($cache_string);
+            } else {
 
-            // Make a request with the count query to the SPARQL endpoint
-            $result = $this->executeUri($query_uri, array(), $user, $pw);
+                $count_query = urlencode($count_query);
+                $count_query = str_replace("+", "%20", $count_query);
+
+                $query_uri = $endpoint . '?query=' . $count_query . '&format=' . urlencode("application/sparql-results+json");
+
+                // Make a request with the count query to the SPARQL endpoint
+                $result = $this->executeUri($query_uri, array(), $user, $pw);
+
+                Cache::put($cache_string, $result, 5);
+            }
 
             $response = json_decode($result);
 
@@ -1027,6 +1051,20 @@ class TripleRepository implements TripleRepositoryInterface
         }
 
         return $triples_amount;
+    }
+
+    /**
+     * Create a string based on some variables, used for caching results from other semantic endpoints
+     *
+     * @param string  $type  The type of the semantic source
+     * @param integer $id    The id of the semantic source type
+     * @param string  $query The query of which the result will be cached (or has already been so)
+     *
+     * @return string
+     */
+    private function buildCacheString($type, $id, $query)
+    {
+        return sha1($type . '_' . $id . '_' . $query);
     }
 
     /**

@@ -17,7 +17,7 @@ class CustomRequestTest extends \PHPUnit_Framework_TestCase
 
     public function tearDown()
     {
-        //unset($_SERVER['QUERY_STRING']);
+        unset($_SERVER['QUERY_STRING']);
     }
 
     /**

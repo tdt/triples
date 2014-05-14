@@ -89,7 +89,7 @@ class SparqlQueryBuilder
      *
      * @return string
      */
-    public function createAllCountQuery($base_uri, $graph_name = null, $depth = 3)
+    public function createCountAllQuery($base_uri, $graph_name = null, $depth = 3)
     {
         $vars = '?s ?p ?o. ';
 
@@ -112,16 +112,20 @@ class SparqlQueryBuilder
             $select_statement = 'select (count(*) as ?count) ';
         }
 
-        $filter_statement = '{ {'. $vars .
-        ' FILTER( regex(?s, "^' . $base_uri . '.*", "i" )). ' .
-        'OPTIONAL { ' . $depth_vars . '}}}';
+        $filter_statement = '{ '. $vars .
+        'FILTER( regex(?s, "^' . $base_uri . '.*", "i" )). ';
 
+        if (!empty($depth_vars)) {
+            $filter_statement .= 'OPTIONAL { ' . $depth_vars . '}';
+        }
+
+        $filter_statement .= '}';
 
         return $select_statement . $filter_statement;
     }
 
     /**
-     * Make and return a SPARQL query, the base URI forms that start of eligible subjects
+     * Make and return a SPARQL query, the base URI forms that start of eligible subjects and its triples
      *
      * @param string  $base_uri    The base_uri that will serve as a subject in the query
      * @param string  $graph_name  The name of the graph to take into account for the query
@@ -129,7 +133,7 @@ class SparqlQueryBuilder
      *
      * @return string
      */
-    public function createAllSparqlQuery($base_uri, $graph_name = null, $limit = 100, $offset = 0, $depth = 3)
+    public function createFetchAllQuery($base_uri, $graph_name = null, $limit = 100, $offset = 0, $depth = 3)
     {
         $vars = '?s ?p ?o. ';
 
@@ -152,9 +156,14 @@ class SparqlQueryBuilder
             $construct_statement = 'construct {' . $vars . $depth_vars . '}';
         }
 
-        $filter_statement = '{ {'. $vars .
-        ' FILTER( regex(?s, "^' . $base_uri . '.*", "i" )). ' .
-        'OPTIONAL { ' . $depth_vars . '}}}';
+        $filter_statement = '{ '. $vars .
+        ' FILTER( regex(?s, "^' . $base_uri . '.*", "i" )). ';
+
+        if (!empty($depth_vars)) {
+            $filter_statement .= 'OPTIONAL { ' . $depth_vars . '}';
+        }
+
+        $filter_statement .= '}';
 
         return $construct_statement . $filter_statement . ' offset ' . $offset . ' limit ' . $limit;
     }
@@ -167,12 +176,12 @@ class SparqlQueryBuilder
      *
      * @return string
      */
-    public function createConstructSparqlQuery($base_uri = null, $graph_name = null, $limit = 100, $offset = 0, $depth = 3)
+    public function createFetchQuery($base_uri = null, $graph_name = null, $limit = 100, $offset = 0, $depth = 3)
     {
         list($s, $p, $o) = $this->query_string_params;
 
         if (empty($base_uri)) {
-            return $this->createVariableConstructSparqlQuery($graph_name, $limit, $offset);
+            return $this->createVariableFetchQuery($graph_name, $limit, $offset);
         }
 
         $vars = $s . ' ' . $p . ' ' . $o . '.';
@@ -239,7 +248,7 @@ class SparqlQueryBuilder
      *
      * @return string
      */
-    public function createVariableConstructSparqlQuery($graph_name = null, $limit = 100, $offset = 0, $depth = 3)
+    public function createVariableFetchQuery($graph_name = null, $limit = 100, $offset = 0, $depth = 3)
     {
         list($s, $p, $o) = $this->query_string_params;
 
