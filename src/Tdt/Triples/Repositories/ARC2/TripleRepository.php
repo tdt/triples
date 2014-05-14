@@ -42,7 +42,18 @@ class TripleRepository implements TripleRepositoryInterface
 
         $this->query_builder->setParameters($parameters);
 
-        $query = $this->query_builder->createConstructSparqlQuery($base_uri, null, $limit, $offset);
+        $query = '';
+
+        if (!empty($base_uri) && $base_uri != \Request::root()) {
+            $query = $this->query_builder->createConstructSparqlQuery($base_uri, null, $limit, $offset);
+        } else {
+            $query = $this->query_builder->createAllSparqlQuery(
+                \Request::root(),
+                null,
+                $limit,
+                $offset
+            );
+        }
 
         $store = $this->setUpArc2Store();
 
@@ -107,7 +118,19 @@ class TripleRepository implements TripleRepositoryInterface
 
                     $endpoint = rtrim($endpoint, '/');
 
-                    $count_query = $this->query_builder->createCountQuery($base_uri, $sparql_source['named_graph']);
+                    if (!empty($base_uri) && $base_uri != \Request::root()) {
+                        $count_query = $this->query_builder->createCountQuery(
+                            $base_uri,
+                            $sparql_source['named_graph'],
+                            $sparql_source['depth']
+                        );
+                    } else {
+                        $count_query = $this->query_builder->createAllCountQuery(
+                            \Request::root(),
+                            $sparql_source['named_graph'],
+                            $sparql_source['depth']
+                        );
+                    }
 
                     $count_query = urlencode($count_query);
                     $count_query = str_replace("+", "%20", $count_query);
@@ -130,7 +153,23 @@ class TripleRepository implements TripleRepositoryInterface
                             // Read the triples from the sparql endpoint
                             $query_limit = $limit - $total_triples;
 
-                            $query = $this->query_builder->createConstructSparqlQuery($base_uri, $sparql_source['named_graph'], $query_limit, $offset);
+                            if (!empty($base_uri) && $base_uri != \Request::root()) {
+                                $query = $this->query_builder->createConstructSparqlQuery(
+                                    $base_uri,
+                                    $sparql_source['named_graph'],
+                                    $query_limit,
+                                    $offset,
+                                    $sparql_source['depth']
+                                );
+                            } else {
+                                $query = $this->query_builder->createAllSparqlQuery(
+                                    \Request::root(),
+                                    $sparql_source['named_graph'],
+                                    $query_limit,
+                                    $offset,
+                                    $sparql_source['depth']
+                                );
+                            }
 
                             $query = urlencode($query);
 
@@ -884,7 +923,23 @@ class TripleRepository implements TripleRepositoryInterface
             $endpoint = rtrim($endpoint, '/');
 
             // Create the count query
-            $count_query = $this->query_builder->createCountQuery($base_uri, $sparql_source['named_graph']);
+            // 1. If either the base uri is passed (normally shouldn't be equal to the request root) of a parameter is filled in
+            // then a normal count query is created, everything is inluded that matches tierh the base_uri or subject + its #.* variants
+            // 2. No base uri is given, no parameters are passed, return all triples + count for which the root uri is a subject
+
+            if (!empty($base_uri) && $base_uri != \Request::root()) {
+                $count_query = $this->query_builder->createCountQuery(
+                    $base_uri,
+                    $sparql_source['named_graph'],
+                    $sparql_source['depth']
+                );
+            } else {
+                $count_query = $this->query_builder->createAllCountQuery(
+                    \Request::root(),
+                    $sparql_source['named_graph'],
+                    $sparql_source['depth']
+                );
+            }
 
             $count_query = urlencode($count_query);
             $count_query = str_replace("+", "%20", $count_query);
@@ -1085,5 +1140,38 @@ class TripleRepository implements TripleRepositoryInterface
         curl_close($ch);
 
         return $response;
+    }
+
+    /**
+     * Get the template parameters from the request (predicate, object)
+     * predicate defaults to ?p and object to ?o
+     *
+     * @return array
+     */
+    private function getTemplateParameters()
+    {
+        list($s, $p, $o) = array(
+                                \Request::query('subject', '?s'),
+                                \Request::query('predicate', '?p'),
+                                \Request::query('object', '?o')
+                            );
+
+        if (substr($s, 0, 4) == "http") {
+            $s = '<' . $s . '>';
+        }
+
+        // TODO expand prefixes
+        if (substr($p, 0, 4) == "http") {
+            $p = '<' . $p . '>';
+        }
+
+        if (substr($o, 0, 4) == "http") {
+            $o = '<' . $o . '>';
+        } else if ($o != '?o' && substr($o, 0, 5) != '<http') {
+            // If the object isn't URI, enquote it, unless it's meant as a sparql variable or an enclosed URI
+            $o = '"' . $o . '"';
+        }
+
+        return array($s, $p, $o);
     }
 }

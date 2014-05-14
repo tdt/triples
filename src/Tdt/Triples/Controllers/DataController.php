@@ -70,6 +70,10 @@ class DataController extends \Controller
 
                 $base_uri = \URL::to($identifier);
 
+                if (empty($base_uri)) {
+                    $base_uri = \Request::root();
+                }
+
                 $result = $this->triples->getTriples($base_uri, $this->getTemplateParameters());
 
                 // If the graph contains no triples, then the uri couldn't resolve to anything, 404 it is
@@ -134,8 +138,16 @@ class DataController extends \Controller
             $data = Cache::get($cache_string);
         } else {
 
+            list($s, $p, $o) = $this->getTemplateParameters();
+
+            $base_uri = null;
+
+            if ($s == '?s' && $p == '?p' && $o == '?o') {
+                $base_uri = \Request::root();
+            }
+
             $result = $this->triples->getTriples(
-                null,
+                $base_uri,
                 $this->getTemplateParameters(),
                 \Request::get('limit', 100),
                 \Request::get('offset', 0)

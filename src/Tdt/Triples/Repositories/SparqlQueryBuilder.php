@@ -4,7 +4,6 @@ namespace Tdt\Triples\Repositories;
 
 class SparqlQueryBuilder
 {
-    private static $depth = 3;
 
     private $query_string_params;
 
@@ -26,12 +25,13 @@ class SparqlQueryBuilder
     /**
      * Make and return a SPARQL count query, taken into account the passed query string parameters
      *
-     * @param string $base_uri    The base_uri that will serve as a subject in the query
-     * @param string $graph_name The name of the graph to take into account for the query
+     * @param string  $base_uri    The base_uri that will serve as a subject in the query
+     * @param string  $graph_name  The name of the graph to take into account for the query
+     * @param integer $depth       The depth of a subjects propagation
      *
      * @return string
      */
-    public function createCountQuery($base_uri = null, $graph_name = null)
+    public function createCountQuery($base_uri = null, $graph_name = null, $depth = 3)
     {
         list($s, $p, $o) = $this->query_string_params;
 
@@ -52,11 +52,9 @@ class SparqlQueryBuilder
         $construct_statement = '';
         $filter_statement = '';
 
-        $count_query = '';
-
         if ($s == '?s' && $p == '?p' && $o == '?o') {
 
-            for ($i = 2; $i <= self::$depth; $i++) {
+            for ($i = 2; $i <= $depth; $i++) {
 
                 $depth_vars .= $last_object . ' ?p' . $i . ' ?o' . $i . '. ';
 
@@ -80,6 +78,85 @@ class SparqlQueryBuilder
         }
 
         return $select_statement . $filter_statement;
+    }
+
+    /**
+     * Make and return a SPARQL count query, the base URI forms that start of eligible subjects
+     *
+     * @param string  $base_uri    The base_uri that will serve as a subject in the query
+     * @param string  $graph_name  The name of the graph to take into account for the query
+     * @param integer $depth       The depth of a subjects propagation
+     *
+     * @return string
+     */
+    public function createAllCountQuery($base_uri, $graph_name = null, $depth = 3)
+    {
+        $vars = '?s ?p ?o. ';
+
+        $last_object = '?o';
+        $depth_vars = '';
+
+        $construct_statement = '';
+        $filter_statement = '';
+
+        for ($i = 2; $i <= $depth; $i++) {
+
+            $depth_vars .= $last_object . ' ?p' . $i . ' ?o' . $i . '. ';
+
+            $last_object = '?o' . $i;
+        }
+
+        if (!empty($graph_name)) {
+            $select_statement = 'select (count(*) as ?count) FROM <' . $graph_name . '> ';
+        } else {
+            $select_statement = 'select (count(*) as ?count) ';
+        }
+
+        $filter_statement = '{ {'. $vars .
+        ' FILTER( regex(?s, "^' . $base_uri . '.*", "i" )). ' .
+        'OPTIONAL { ' . $depth_vars . '}}}';
+
+
+        return $select_statement . $filter_statement;
+    }
+
+    /**
+     * Make and return a SPARQL query, the base URI forms that start of eligible subjects
+     *
+     * @param string  $base_uri    The base_uri that will serve as a subject in the query
+     * @param string  $graph_name  The name of the graph to take into account for the query
+     * @param integer $depth       The depth of a subjects propagation
+     *
+     * @return string
+     */
+    public function createAllSparqlQuery($base_uri, $graph_name = null, $limit = 100, $offset = 0, $depth = 3)
+    {
+        $vars = '?s ?p ?o. ';
+
+        $last_object = '?o';
+        $depth_vars = '';
+
+        $construct_statement = '';
+        $filter_statement = '';
+
+        for ($i = 2; $i <= $depth; $i++) {
+
+            $depth_vars .= $last_object . ' ?p' . $i . ' ?o' . $i . '. ';
+
+            $last_object = '?o' . $i;
+        }
+
+        if (!empty($graph_name)) {
+            $construct_statement = 'construct {' . $vars . $depth_vars . '} FROM <' . $graph_name . '>';
+        } else {
+            $construct_statement = 'construct {' . $vars . $depth_vars . '}';
+        }
+
+        $filter_statement = '{ {'. $vars .
+        ' FILTER( regex(?s, "^' . $base_uri . '.*", "i" )). ' .
+        'OPTIONAL { ' . $depth_vars . '}}}';
+
+        return $construct_statement . $filter_statement . ' offset ' . $offset . ' limit ' . $limit;
     }
 
     /**
@@ -109,7 +186,7 @@ class SparqlQueryBuilder
         // Only when no template parameter is given, add the depth parameters
         if ($s == '?s' && $p == '?p' && $o == '?o') {
 
-            for ($i = 2; $i <= self::$depth; $i++) {
+            for ($i = 2; $i <= $depth; $i++) {
 
                 $depth_vars .= $last_object . ' ?p' . $i . ' ?o' . $i . '. ';
 

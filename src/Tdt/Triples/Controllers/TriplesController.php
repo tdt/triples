@@ -33,6 +33,12 @@ class TriplesController extends \Controller
                 return $this->get();
                 break;
             case "POST":
+
+                if (!empty($id)) {
+                    // Don't allow POSTS to configurations (only PUT and DELETE allowed)
+                    \App::abort(405, "The HTTP method POST is not allowed on this resource. POST is only allowed on api/triples.");
+                }
+
                 return $this->post();
                 break;
             case "PATCH":
