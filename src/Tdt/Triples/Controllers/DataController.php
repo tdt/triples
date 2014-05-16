@@ -3,11 +3,13 @@
 namespace Tdt\Triples\Controllers;
 
 use Tdt\Triples\Repositories\Interfaces\TripleRepositoryInterface;
+use Tdt\Triples\Repositories\SparqlQueryBuilder;
 use Tdt\Core\Repositories\Interfaces\DefinitionRepositoryInterface;
 use Tdt\Core\ContentNegotiator;
 use Tdt\Core\Datasets\Data;
 use Tdt\Core\Formatters\FormatHelper;
 use Tdt\Core\Cache\Cache;
+use Tdt\Core\Pager;
 
 /**
  * DataController checks if the core application can resolve
@@ -61,7 +63,7 @@ class DataController extends \Controller
 
         } else {
 
-            $cache_string = sha1($this->getRawRequestURI(\Request::root()));
+            $cache_string = sha1($this->getRawRequestURI(\Request::url()));
 
             // Check cache
             if (Cache::has($cache_string)) {
@@ -74,7 +76,9 @@ class DataController extends \Controller
                     $base_uri = \Request::root();
                 }
 
-                $result = $this->triples->getTriples($base_uri, $this->getTemplateParameters());
+                list($limit, $offset) = Pager::calculateLimitAndOffset();
+
+                $result = $this->triples->getTriples($base_uri, 100, $offset);
 
                 // If the graph contains no triples, then the uri couldn't resolve to anything, 404 it is
                 if ($result->countTriples() == 0) {
@@ -140,6 +144,8 @@ class DataController extends \Controller
 
             list($s, $p, $o) = $this->getTemplateParameters();
 
+            SparqlQueryBuilder::setParameters(array($s, $p, $o));
+
             $base_uri = null;
 
             if ($s == '?s' && $p == '?p' && $o == '?o') {
@@ -148,7 +154,6 @@ class DataController extends \Controller
 
             $result = $this->triples->getTriples(
                 $base_uri,
-                $this->getTemplateParameters(),
                 \Request::get('limit', 100),
                 \Request::get('offset', 0)
             );
@@ -227,14 +232,12 @@ class DataController extends \Controller
      * Return the original request URI, root stays the same, query string parameters are
      * return as they were in the correct order, without encoding/decoding changes
      *
-     * @param string $root The root URI of the request
+     * @param string $url The request URI without any query string parameters
      *
      * @return string
      */
-    public function getRawRequestURI($root)
+    public function getRawRequestURI($url)
     {
-        $full_url = $root . '/all?';
-
         $query_string = $_SERVER['QUERY_STRING'];
 
         $query_parts = explode('&', $query_string);
@@ -245,17 +248,17 @@ class DataController extends \Controller
 
                 $couple = explode('=', $part);
 
-                $full_url .= $couple[0] . '=' . $couple[1] . '&';
+                $url .= $couple[0] . '=' . $couple[1] . '&';
             }
         }
 
-        $full_url = rtrim($full_url, '?');
-        $full_url = rtrim($full_url, '&');
+        $url = rtrim($url, '?');
+        $url = rtrim($url, '&');
 
 
-        $full_url = str_replace('#', '%23', $full_url);
+        $url = str_replace('#', '%23', $url);
 
-        return $full_url;
+        return $url;
     }
 
     /**

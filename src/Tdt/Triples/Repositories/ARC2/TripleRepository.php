@@ -21,7 +21,14 @@ class TripleRepository implements TripleRepositoryInterface
     public function __construct(SemanticSourceRepositoryInterface $semantic_sources)
     {
         $this->semantic_sources = $semantic_sources;
+
         $this->query_builder = new SparqlQueryBuilder();
+
+        $this->local_store = \App::make('Tdt\Triples\Repositories\SemanticDataHandlers\LocalStoreHandler');
+
+        $this->sparql_handler = \App::make('Tdt\Triples\Repositories\SemanticDataHandlers\SparqlHandler');
+
+        $this->ldf_handler = \App::make('Tdt\Triples\Repositories\SemanticDataHandlers\LDFHandler');
     }
 
     /**
@@ -33,343 +40,50 @@ class TripleRepository implements TripleRepositoryInterface
      *
      * @return EasyRdf_Graph
      */
-    public function getTriples($base_uri, $parameters, $limit = 100, $offset = 0)
+    public function getTriples($base_uri, $limit = 100, $offset = 0)
     {
         $original_limit = $limit;
         $original_offset = $offset;
 
-        // Fetch the query string parameters
-        $this->parameters = $parameters;
-
-        $this->query_builder->setParameters($parameters);
-
-        $query = '';
-
-        if (!empty($base_uri) && $base_uri != \Request::root()) {
-            $query = $this->query_builder->createFetchQuery($base_uri, null, $limit, $offset);
-        } else {
-            $query = $this->query_builder->createFetchAllQuery(
-                \Request::root(),
-                null,
-                $limit,
-                $offset
-            );
-        }
-
-        $store = $this->setUpArc2Store();
-
-        $result = $store->query($query);
-
-        // The result will be in an array structure, we need to build an
-        // EasyRdf_Graph out of this
-
-        if (!empty($result['result'])) {
-            $graph = $this->buildGraph($result['result']);
-        } else {
-            $graph = new \EasyRdf_Graph();
-        }
-
-        if (!$result) {
-            $errors = $store->getErrors();
-            $message = array_shift($errors);
-
-            \Log::error("Error occured in the triples package, while trying to retrieve triples: " . $message);
-        }
-
-        // Fetch data out of the sparql endpoint as well,
-        // if necessary according to the paging parameters
-        // What we are trying to accomplish is a simulated paging mechanism
-        // But since sparql sources aren't cached, this mechanism will
-        // have to be simulated.
-        $count_arc_triples = $this->countARC2Triples($base_uri);
-
-        // Total amount of triples
+        // Fetch the total amount of triples
         $total_triples_count = $this->getCount($base_uri);
 
-        $triples_fetched = $count_arc_triples - $offset;
+        // Fetch the local amount of triples
+        $count_local_triples = $this->local_store->getCount($base_uri);
 
-        if ($count_arc_triples < $offset + $limit) {
+        // Create the resulting graph
+        $graph = new \EasyRdf_Graph();
 
-            $total_triples = 0;
+        if ($count_local_triples < $offset) {
+            $offset -= $count_local_triples;
+        } else {
 
-            if ($count_arc_triples > $offset) {
-                $total_triples = $count_arc_triples - $offset;
-            }
+            // Add triples from the local store
+            $start_amount = $graph->countTriples();
 
-            // If the fetched triples are negative, this means that we didnt fetch any triples at all
-            if ($triples_fetched < 0) {
-                $offset = $triples_fetched * -1;
-                $graph = new \EasyRdf_Graph();
-            } else {
-                // The entire offset has been met in the ARC2 store
-                $offset = 0;
-            }
+            $graph = $this->local_store->addTriples($base_uri, $graph, $limit, $offset);
+
+            $offset -= $graph->countTriples() - $start_amount;
+        }
+
+        if ($offset < 0) {
+            $offset = 0;
+        }
+
+        $sparql_triples_count = $this->sparql_handler->getCount($base_uri);
+
+        // If there's more room for triples, and the sparql can provide sufficient triples
+        // according to the paging parameters, add triples from the sparql
+        if ($graph->countTriples() < $limit && $offset + $limit > $sparql_triples_count && $sparql_triples_count > $offset) {
 
             // For every semantic source, count the triples we'll get out of them (sparql and ldf for the moment)
-            $sparql_repo = \App::make('Tdt\Triples\Repositories\Interfaces\SparqlSourceRepositoryInterface');
+            $graph = $this->sparql_handler->addTriples($base_uri, $graph, $limit, $offset);
+        }
 
-            // Iterate the sparql endpoints
-            foreach ($sparql_repo->getAll() as $sparql_source) {
+        $ldf_triples_count = $this->ldf_handler->getCount($base_uri);
 
-                if ($total_triples < $limit) {
-
-                    $endpoint = $sparql_source['endpoint'];
-                    $pw = $sparql_source['endpoint_password'];
-                    $user = $sparql_source['endpoint_user'];
-
-                    $endpoint = rtrim($endpoint, '/');
-
-                    if (!empty($base_uri) && $base_uri != \Request::root()) {
-                        $count_query = $this->query_builder->createCountQuery(
-                            $base_uri,
-                            $sparql_source['named_graph'],
-                            $sparql_source['depth']
-                        );
-                    } else {
-                        $count_query = $this->query_builder->createCountAllQuery(
-                            \Request::root(),
-                            $sparql_source['named_graph'],
-                            $sparql_source['depth']
-                        );
-                    }
-
-                    // Check for caching
-                    $cache_string = $this->buildCacheString('sparql', $sparql_source['id'], $count_query);
-
-                    if (Cache::has($cache_string)) {
-                        $result = Cache::get($cache_string);
-                    } else {
-
-                        $count_query = urlencode($count_query);
-                        $count_query = str_replace("+", "%20", $count_query);
-
-                        $query_uri = $endpoint . '?query=' . $count_query . '&format=' . urlencode("application/sparql-results+json");
-
-                        // Make a request with the count query to the SPARQL endpoint
-                        $result = $this->executeUri($query_uri, array(), $user, $pw);
-
-                        Cache::put($cache_string, $result, 5);
-                    }
-
-                    $response = json_decode($result);
-
-                    if (!empty($response)) {
-
-                        $count = $response->results->bindings[0]->count->value;
-
-                        // If the amount of matching triples is higher than the offset
-                        // add them and update the offset, if not higher, then only update the offset
-
-                        if ($count > $offset) {
-
-                            // Read the triples from the sparql endpoint
-                            $query_limit = $limit - $total_triples;
-
-                            if (!empty($base_uri) && $base_uri != \Request::root()) {
-                                $query = $this->query_builder->createFetchQuery(
-                                    $base_uri,
-                                    $sparql_source['named_graph'],
-                                    $query_limit,
-                                    $offset,
-                                    $sparql_source['depth']
-                                );
-                            } else {
-                                $query = $this->query_builder->createFetchAllQuery(
-                                    \Request::root(),
-                                    $sparql_source['named_graph'],
-                                    $query_limit,
-                                    $offset,
-                                    $sparql_source['depth']
-                                );
-                            }
-
-                            $query = urlencode($query);
-
-                            $query = str_replace("+", "%20", $query);
-
-                            $query_uri = $endpoint . '?query=' . $query . '&format=' . urlencode("application/rdf+xml");
-
-                            $result = $this->executeUri($query_uri, array(), $user, $pw);
-
-                            if (!empty($result) && $result[0] == '<') {
-
-                                // Parse the triple response and retrieve the triples from them
-                                $result_graph = new \EasyRdf_Graph();
-                                $parser = new \EasyRdf_Parser_RdfXml();
-
-                                $parser->parse($result_graph, $result, 'rdfxml', null);
-
-                                $graph = $this->mergeGraph($graph, $result_graph);
-
-                                $total_triples += $count - $offset;
-
-                            } else {
-                                \Log::error("Something went wrong while fetching the triples from a sparql source. The error was " . $result . ". The query was : " . $query_uri);
-                            }
-
-                        } else {
-                            // Update the offset
-                            $offset -= $count;
-                        }
-
-                        if ($offset < 0) {
-                            $offset = 0;
-                        }
-                    }
-                }
-            }
-
-            $ldf_repo = \App::make('Tdt\Triples\Repositories\Interfaces\LdfSourceRepositoryInterface');
-
-            // Iterate the LDF end points, not that ldf servers don't necessarily have page size's as a parameter
-            // But rather have a fixed page size
-            foreach ($ldf_repo->getAll() as $ldf_conf) {
-
-                if ($total_triples < $limit) {
-
-                    // Build the query string (raw)
-                    $query_string = $_SERVER['QUERY_STRING'];
-
-                    $q_string_raw = '';
-
-                    $query_parts = explode('&', $query_string);
-
-                    // Don't let paging parameters in the re-constructed query string
-                    $invalid_q_string = array('page');
-
-                    foreach ($query_parts as $part) {
-
-                        if (!empty($part)) {
-
-                            $couple = explode('=', $part);
-
-                            if (!in_array($couple[0], $invalid_q_string)) {
-                                $q_string_raw .= $couple[0] . '=' . $couple[1] . '&';
-                            }
-                        }
-                    }
-
-                    $q_string_raw = rtrim($q_string_raw, '&');
-
-                    $start_fragment = $ldf_conf['startfragment'];
-
-                    $entire_fragment = $start_fragment . '?' . $q_string_raw;
-                    $entire_fragment = rtrim($entire_fragment, '?');
-
-                    // Make the LDF query (basic GET to the endpoint, should provide us with a hydra:totalItems or void:triples entry)
-                    $accept = array("Accept: text/turtle,*/*;q=0.0");
-
-                    $response = $this->executeUri($entire_fragment, $accept);
-
-                    if ($response) {
-
-                        // Try decoding it into turtle, if not something is wrong with the response body
-                        try {
-
-                            $tmp_graph = new \EasyRdf_Graph();
-
-                            $parser = new \EasyRdf_Parser_Turtle();
-
-                            \EasyRdf_Namespace::set('hydra', 'http://www.w3.org/ns/hydra/core#');
-
-                            $parser->parse($tmp_graph, $response, 'turtle', null);
-
-                            // Fetch the count (hydra:totalItems or void:triples)
-                            $count = $tmp_graph->getLiteral($entire_fragment, 'hydra:totalItems');
-
-                            $page_size = $tmp_graph->getLiteral($entire_fragment, 'hydra:itemsPerPage');
-
-                            if (is_null($count)) {
-                                $count = $tmp_graph->getLiteral($entire_fragment, 'void:triples');
-                            }
-
-                            if (is_null($count) || is_null($page_size)) {
-
-                                $count = -1; // Skip, the count has not been found on this endpoint
-
-                                \Log::warning("An LDF endpoint's count could not be retrieved from the uri: $entire_fragment");
-                            } else {
-                                $count = $count->getValue();
-                                $page_size = $page_size->getValue();
-                            }
-
-                            // If the amount of matching triples is higher than the offset
-                            // add them and update the offset, if not higher, then only update the offset
-                            if ($count > $offset) {
-
-                                // Read the triples from the LDF
-                                $query_limit = $limit - $total_triples;
-
-                                // There's no way of giving along the page size (not that we can presume)
-                                // So we have to make a numer of requests
-                                $amount_of_requests = ceil($query_limit / $page_size);
-
-                                for ($i = 0; $i < $amount_of_requests; $i++) {
-
-                                    $paged_fragment = $entire_fragment;
-
-                                    if (!empty($q_string_raw)) {
-                                        $paged_fragment .= '&page=' . $i;
-                                    } else {
-                                        $paged_fragment .= '?page=' . $i;
-                                    }
-
-                                    // Ask for turtle
-                                    $accept = array('Accept: text/turtle');
-
-                                    $response = $this->executeUri($paged_fragment, $accept);
-
-                                    if ($response) {
-
-                                         // Try decoding it into turtle, if not something is wrong with the response body
-                                        try {
-                                            $tmp_graph = new \EasyRdf_Graph();
-
-                                            $parser = new \EasyRdf_Parser_Turtle();
-
-                                            $parser->parse($tmp_graph, $response, 'turtle', $start_fragment);
-
-                                            // Fetch the count (hydra:totalItems or void:triples)
-                                            $total_items = $tmp_graph->getLiteral($paged_fragment, 'hydra:totalItems');
-
-                                            if (is_null($total_items)) {
-                                                $total_items = $tmp_graph->getLiteral($paged_fragment, 'void:triples');
-                                            }
-
-                                            if (!is_null($total_items)) {
-
-                                                // This needs to be a function of a different helper class for LDF endpoints
-                                                $tmp_graph = $this->rebaseGraph($start_fragment, $tmp_graph);
-
-                                                $graph = $this->mergeGraph($graph, $tmp_graph);
-
-                                                $total_triples += $page_size;
-                                            }
-                                        } catch (\EasyRdf_Parser_Exception $ex) {
-                                            \Log::error("Failed to parse turtle content from the LDF endpoint: $endpoint");
-                                        }
-                                    } else {
-                                        \Log::error("Something went wrong while fetching the triples from a LDF source. The error was " . $response . ". The query was : " . $paged_fragment);
-                                    }
-                                }
-
-                            } else {
-                                // Update the offset
-                                $offset -= $count;
-                            }
-
-                            if ($offset < 0) {
-                                $offset = 0;
-                            }
-
-
-                        } catch (\EasyRdf_Parser_Exception $ex) {
-                            \Log::error("Failed to parse turtle content from the LDF endpoint: $endpoint");
-                        }
-                    }
-
-                }
-            }
+        if ($graph->countTriples() < $limit && $offset + $limit > $ldf_triples_count && $sparql_triples_count > $offset) {
+            $graph = $this->ldf_handler->addTriples($base_uri, $graph, $limit, $offset);
         }
 
         // If the graph doesn't contain any triples, then the resource can't be resolved
@@ -708,31 +422,6 @@ class TripleRepository implements TripleRepositoryInterface
     }
 
     /**
-     * Create an EasyRdf_Graph out of an ARC2 query result structure
-     *
-     * @param array $result
-     *
-     * @return EasyRdf_Graph
-     */
-    private function buildGraph(array $result)
-    {
-        $graph = new \EasyRdf_Graph();
-
-        if (!empty($result)) {
-
-            $store = $this->setUpArc2Store();
-
-            $ttl_string = $store->toNTriples($result);
-
-            $parser = new \EasyRdf_Parser_Turtle();
-
-            $parser->parse($graph, $ttl_string, 'turtle', '');
-        }
-
-        return $graph;
-    }
-
-    /**
      * Add void and hydra meta-data to an existing graph
      *
      * @param string        $base_uri The URI of the request
@@ -918,139 +607,13 @@ class TripleRepository implements TripleRepositoryInterface
      */
     public function getCount($base_uri)
     {
-        $triples_amount = 0;
+        $triples_amount = $this->local_store->getCount($base_uri);
 
-        $triples_amount += $this->countARC2Triples($base_uri);
+        // Count the relevant triples from sparql sources
+        $triples_amount += $this->sparql_handler->getCount($base_uri);
 
-        // Count the triples in the sparql sources (these aren't cached in our store)
-        $sparql_repo = \App::make('Tdt\Triples\Repositories\Interfaces\SparqlSourceRepositoryInterface');
-
-        foreach ($sparql_repo->getAll() as $sparql_source) {
-
-            $endpoint = $sparql_source['endpoint'];
-            $pw = $sparql_source['endpoint_password'];
-            $user = $sparql_source['endpoint_user'];
-
-            // Fetch the SPARQL endpoint
-            $endpoint = rtrim($endpoint, '/');
-
-            // Create the count query
-            // 1. If either the base uri is passed (normally shouldn't be equal to the request root) of a parameter is filled in
-            // then a normal count query is created, everything is inluded that matches tierh the base_uri or subject + its #.* variants
-            // 2. No base uri is given, no parameters are passed, return all triples + count for which the root uri is a subject
-
-            if (!empty($base_uri) && $base_uri != \Request::root()) {
-
-                $count_query = $this->query_builder->createCountQuery(
-                    $base_uri,
-                    $sparql_source['named_graph'],
-                    $sparql_source['depth']
-                );
-            } else {
-
-                $count_query = $this->query_builder->createCountAllQuery(
-                    \Request::root(),
-                    $sparql_source['named_graph'],
-                    $sparql_source['depth']
-                );
-            }
-
-            // Check for caching
-            $cache_string = $this->buildCacheString('sparql', $sparql_source['id'], $count_query);
-
-            if (Cache::has($cache_string)) {
-                $result = Cache::get($cache_string);
-            } else {
-
-                $count_query = urlencode($count_query);
-                $count_query = str_replace("+", "%20", $count_query);
-
-                $query_uri = $endpoint . '?query=' . $count_query . '&format=' . urlencode("application/sparql-results+json");
-
-                // Make a request with the count query to the SPARQL endpoint
-                $result = $this->executeUri($query_uri, array(), $user, $pw);
-
-                Cache::put($cache_string, $result, 5);
-            }
-
-            $response = json_decode($result);
-
-            if (!empty($response)) {
-
-                $count = $response->results->bindings[0]->count->value;
-
-                $triples_amount += $count;
-            }
-        }
-
-        $ldf_repo = \App::make('Tdt\Triples\Repositories\Interfaces\LdfSourceRepositoryInterface');
-
-        foreach ($ldf_repo->getAll() as $ldf_source) {
-
-            // Fetch the LDF endpoint
-            $startfragment = $ldf_source['startfragment'];
-
-            // Build the query string (raw)
-            $query_string = $_SERVER['QUERY_STRING'];
-
-            $q_string_raw = '';
-
-            $query_parts = explode('&', $query_string);
-
-            // Don't let paging parameters in the re-constructed query string
-            $invalid_q_string = array('page');
-
-            foreach ($query_parts as $part) {
-
-                if (!empty($part)) {
-
-                    $couple = explode('=', $part);
-
-                    if (!in_array($couple[0], $invalid_q_string)) {
-                        $q_string_raw .= $couple[0] . '=' . $couple[1] . '&';
-                    }
-                }
-            }
-
-            $entire_fragment = $startfragment;
-
-            if (!empty($q_string_raw)) {
-                $q_string_raw = rtrim($q_string_raw, '&');
-                $entire_fragment = $startfragment . '?' . $q_string_raw;
-            }
-
-            // Make the LDF query (basic GET to the endpoint, should provide us with a hydra:totalItems or void:triples entry)
-            $accept = array("Accept: text/turtle,*/*;q=0.0");
-
-            $response = $this->executeUri($entire_fragment, $accept);
-
-            if ($response) {
-                // Try decoding it into turtle, if not something is wrong with the response body
-                try {
-                    $graph = new \EasyRdf_Graph();
-
-                    $parser = new \EasyRdf_Parser_Turtle();
-
-                    $parser->parse($graph, $response, 'turtle', null);
-
-                    // Fetch the count (hydra:totalItems or void:triples)
-
-                    $total_items = $graph->getLiteral($entire_fragment, 'hydra:totalItems');
-
-                    if (is_null($total_items)) {
-                        $total_items = $graph->getLiteral($entire_fragment, 'void:triples');
-                    }
-
-                    if (!is_null($total_items)) {
-                        $triples_amount += $total_items->getValue();
-                    }
-                } catch (\EasyRdf_Parser_Exception $ex) {
-                    \Log::error("Failed to parse turtle content from the LDF endpoint: $endpoint");
-                }
-            }
-        }
-
-        return $triples_amount;
+        // Count the relevant triples from the LDF sources
+        return $triples_amount += $this->ldf_handler->getCount($base_uri);
     }
 
     /**
@@ -1068,7 +631,7 @@ class TripleRepository implements TripleRepositoryInterface
     }
 
     /**
-     * return paging headers
+     * Return paging headers
      *
      * @param integer $limit  The size of a page
      * @param integer $offset The offset of search result
@@ -1178,38 +741,5 @@ class TripleRepository implements TripleRepositoryInterface
         curl_close($ch);
 
         return $response;
-    }
-
-    /**
-     * Get the template parameters from the request (predicate, object)
-     * predicate defaults to ?p and object to ?o
-     *
-     * @return array
-     */
-    private function getTemplateParameters()
-    {
-        list($s, $p, $o) = array(
-                                \Request::query('subject', '?s'),
-                                \Request::query('predicate', '?p'),
-                                \Request::query('object', '?o')
-                            );
-
-        if (substr($s, 0, 4) == "http") {
-            $s = '<' . $s . '>';
-        }
-
-        // TODO expand prefixes
-        if (substr($p, 0, 4) == "http") {
-            $p = '<' . $p . '>';
-        }
-
-        if (substr($o, 0, 4) == "http") {
-            $o = '<' . $o . '>';
-        } else if ($o != '?o' && substr($o, 0, 5) != '<http') {
-            // If the object isn't URI, enquote it, unless it's meant as a sparql variable or an enclosed URI
-            $o = '"' . $o . '"';
-        }
-
-        return array($s, $p, $o);
     }
 }

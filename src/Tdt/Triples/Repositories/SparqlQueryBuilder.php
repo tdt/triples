@@ -5,11 +5,11 @@ namespace Tdt\Triples\Repositories;
 class SparqlQueryBuilder
 {
 
-    private $query_string_params;
+    private static $query_string_params;
 
     public function __construct(array $query_string_params = array('?s', '?p', '?o'))
     {
-        $this->query_string_params = $query_string_params;
+        self::$query_string_params = $query_string_params;
     }
 
     /**
@@ -17,9 +17,9 @@ class SparqlQueryBuilder
      *
      * @param array $parameters
      */
-    public function setParameters(array $parameters)
+    public static function setParameters(array $parameters)
     {
-        $this->query_string_params = $parameters;
+        self::$query_string_params = $parameters;
     }
 
     /**
@@ -33,7 +33,7 @@ class SparqlQueryBuilder
      */
     public function createCountQuery($base_uri = null, $graph_name = null, $depth = 3)
     {
-        list($s, $p, $o) = $this->query_string_params;
+        list($s, $p, $o) = self::$query_string_params;
 
         if (empty($base_uri)) {
             return $this->createVariableCountQuery($graph_name);
@@ -178,7 +178,7 @@ class SparqlQueryBuilder
      */
     public function createFetchQuery($base_uri = null, $graph_name = null, $limit = 100, $offset = 0, $depth = 3)
     {
-        list($s, $p, $o) = $this->query_string_params;
+        list($s, $p, $o) = self::$query_string_params;
 
         if (empty($base_uri)) {
             return $this->createVariableFetchQuery($graph_name, $limit, $offset);
@@ -230,7 +230,7 @@ class SparqlQueryBuilder
      */
     public function createVariableCountQuery($graph_name = null)
     {
-        list($s, $p, $o) = $this->query_string_params;
+        list($s, $p, $o) = self::$query_string_params;
 
         if (!empty($graph_name)) {
             $select_statement = 'select (count(*) as ?count) FROM <' . $graph_name . '> ';
@@ -250,7 +250,7 @@ class SparqlQueryBuilder
      */
     public function createVariableFetchQuery($graph_name = null, $limit = 100, $offset = 0, $depth = 3)
     {
-        list($s, $p, $o) = $this->query_string_params;
+        list($s, $p, $o) = self::$query_string_params;
 
         if (!empty($graph_name)) {
             $construct_statement = "construct { $s $p $o } FROM <" . $graph_name . ">";
