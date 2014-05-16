@@ -242,19 +242,25 @@ class DataController extends \Controller
 
         $query_parts = explode('&', $query_string);
 
+        $raw_query_string = '';
+
         foreach ($query_parts as $part) {
 
             if (!empty($part)) {
 
                 $couple = explode('=', $part);
 
-                $url .= $couple[0] . '=' . $couple[1] . '&';
+                $raw_query_string .= $couple[0] . '=' . $couple[1] . '&';
             }
         }
 
-        $url = rtrim($url, '?');
-        $url = rtrim($url, '&');
+        if (!empty($raw_query_string)) {
+            $url .= '?' . $raw_query_string;
 
+            $url = rtrim($url, '?');
+
+            $url = rtrim($url, '&');
+        }
 
         $url = str_replace('#', '%23', $url);
 

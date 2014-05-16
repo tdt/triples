@@ -35,7 +35,7 @@ class CustomRequestTest extends \PHPUnit_Framework_TestCase
 
         $rebuilt_uri = $data_controller->getRawRequestURI('http://localhost/foo/bar');
 
-        $original_uri = 'http://localhost/foo/bar/all?limit=20&predicate=http%3A%2F%2Ffoo.bar%2Fns%23predicate&offset=1&object=42';
+        $original_uri = 'http://localhost/foo/bar?limit=20&predicate=http%3A%2F%2Ffoo.bar%2Fns%23predicate&offset=1&object=42';
 
         $this->assertEquals($original_uri, $rebuilt_uri);
     }
