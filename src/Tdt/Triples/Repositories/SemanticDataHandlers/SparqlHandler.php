@@ -34,6 +34,20 @@ class SparqlHandler implements SemanticHandlerInterface
         return $this->triples_read;
     }
 
+    private function hasParameters()
+    {
+
+        $sparql_param_defaults = array('?s', '?p', '?o');
+
+        foreach (SparqlQueryBuilder::getParameters() as $param) {
+            if (!in_array($param, $sparql_param_defaults)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     /**
      * Return the amount of triples according to the count query
      *
@@ -53,7 +67,7 @@ class SparqlHandler implements SemanticHandlerInterface
             // then a normal count query is created, everything is inluded that matches tierh the base_uri or subject + its #.* variants
             // 2. No base uri is given, no parameters are passed, return all triples + count for which the root uri is a subject
 
-            if (!empty($base_uri) && $base_uri != \Request::root()) {
+            if ((!empty($base_uri) && $base_uri != \Request::root()) || $this->hasParameters()) {
 
                 $count_query = $this->query_builder->createCountQuery(
                     $base_uri,
@@ -130,7 +144,7 @@ class SparqlHandler implements SemanticHandlerInterface
 
             $endpoint = rtrim($endpoint, '/');
 
-            if (!empty($base_uri) && $base_uri != \Request::root()) {
+            if ((!empty($base_uri) && $base_uri != \Request::root()) || $this->hasParameters()) {
                 $count_query = $this->query_builder->createCountQuery(
                     $base_uri,
                     $sparql_source['named_graph'],

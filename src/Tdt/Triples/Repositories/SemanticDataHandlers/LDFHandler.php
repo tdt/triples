@@ -108,6 +108,95 @@ class LDFHandler implements SemanticHandlerInterface
     }
 
     /**
+     * Merge two graphs and return the result
+     *
+     * @param EasyRdf_Graph $graph
+     * @param EasyRdf_Graph $input_graph
+     *
+     * @return EasyRdf_Graph
+     */
+    private function mergeGraph($graph, $input_graph)
+    {
+        $turtle_graph = $input_graph->serialise('turtle');
+
+        $graph->parse($turtle_graph, 'turtle');
+
+        return $graph;
+    }
+
+    /**
+     * Rebase the graph on triples with the start fragment to our own base URI
+     *
+     * @param string        $start_fragment
+     * @param EasyRdf_Graph $graph
+     *
+     * @return EasyRdf_Graph
+     */
+    private function rebaseGraph($start_fragment, $graph)
+    {
+        // Filter out the #dataset meta-data (if present) and change the URI's to our base URI
+        $collections = $graph->allOfType('hydra:Collection');
+
+        // Fetch all of the subject URI's that bring forth hydra meta-data (and are thus irrelevant)
+        $ignore_subjects = array();
+
+        if (empty($collection)) {
+            $collections = $graph->allOfType('hydra:PagedCollection');
+        }
+
+        if (!empty($collections)) {
+            foreach ($collections as $collection) {
+                array_push($ignore_subjects, $collection->getUri());
+            }
+        }
+
+        // Fetch the bnode of the hydra mapping (property is hydra:search)
+        $hydra_mapping = $graph->getResource($start_fragment . '#dataset', 'hydra:search');
+
+        if (!empty($hydra_mapping)) {
+
+            // Hydra mapping's will be a bnode structure
+            array_push($ignore_subjects, '_:' . $hydra_mapping->getBNodeId());
+
+            $mapping_nodes = $hydra_mapping->all('hydra:mapping');
+
+            foreach ($mapping_nodes as $mapping_node) {
+                if ($mapping_node->isBNode()) {
+                    array_push($ignore_subjects, '_:' . $mapping_node->getBNodeId());
+                }
+            }
+
+            $graph->deleteResource($start_fragment . '#dataset', 'hydra:search', '_:genid1');
+            $graph->deleteResource('_:genid1', 'hydra:mapping', '_:genid2');
+
+            // Delete all of the mapping related resources
+            $triples = $graph->toRdfPhp();
+        } else {
+             // Change all of the base (startfragment) URI's to our own base URI
+            $triples = $tmp_graph->toRdfPhp();
+        }
+
+        // Unset the #dataset
+        unset($triples[$start_fragment . '#dataset']);
+
+        foreach ($ignore_subjects as $ignore_subject) {
+            unset($triples[$ignore_subject]);
+        }
+
+        $adjusted_graph = new \EasyRdf_Graph();
+
+        foreach ($triples as $subject => $triple) {
+            foreach ($triple as $predicate => $objects) {
+                foreach ($objects as $object) {
+                    $adjusted_graph->add($subject, $predicate, $object['value']);
+                }
+            }
+        }
+
+        return $adjusted_graph;
+    }
+
+    /**
      * Add triples to the graph and return it based on limit, offset and the SPARQL query
      *
      * @param string        $base_uri

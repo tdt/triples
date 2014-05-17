@@ -23,6 +23,16 @@ class SparqlQueryBuilder
     }
 
     /**
+     * Return the parameters for the request
+     *
+     * @return array
+     */
+    public static function getParameters()
+    {
+        return self::$query_string_params;
+    }
+
+    /**
      * Make and return a SPARQL count query, taken into account the passed query string parameters
      *
      * @param string  $base_uri    The base_uri that will serve as a subject in the query

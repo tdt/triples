@@ -43,7 +43,7 @@ class LocalStoreHandler implements SemanticHandlerInterface
             // then a normal count query is created, everything is inluded that matches tierh the base_uri or subject + its #.* variants
             // 2. No base uri is given, no parameters are passed, return all triples + count for which the root uri is a subject
 
-        if (!empty($base_uri) && $base_uri != \Request::root()) {
+        if ((!empty($base_uri) && $base_uri != \Request::root()) || $this->hasParameters()) {
 
             $count_query = $this->query_builder->createCountQuery(
                 $base_uri
@@ -66,6 +66,20 @@ class LocalStoreHandler implements SemanticHandlerInterface
         return 0;
     }
 
+    private function hasParameters()
+    {
+
+        $sparql_param_defaults = array('?s', '?p', '?o');
+
+        foreach (SparqlQueryBuilder::getParameters() as $param) {
+            if (!in_array($param, $sparql_param_defaults)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     /**
      * Add triples to the graph and return it based on limit, offset and the SPARQL query
      *
@@ -79,7 +93,7 @@ class LocalStoreHandler implements SemanticHandlerInterface
     public function addTriples($base_uri, $graph, $limit, $offset)
     {
         // Build the query
-        if (!empty($base_uri) && $base_uri != \Request::root()) {
+        if ((!empty($base_uri) && $base_uri != \Request::root()) || $this->hasParameters()) {
             $query = $this->query_builder->createFetchQuery($base_uri, null, $limit, $offset);
         } else {
             $query = $this->query_builder->createFetchAllQuery(
