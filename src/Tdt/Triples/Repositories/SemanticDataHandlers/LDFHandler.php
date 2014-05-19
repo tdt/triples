@@ -421,7 +421,7 @@ class LDFHandler implements SemanticHandlerInterface
     {
         // Check if curl is installed on this machine
         if (!function_exists('curl_init')) {
-            \App::abort(500, "cURL is not installed as an executable on this server, this is necessary to execute the SPARQL query properly.");
+            \App::abort(500, "cURL is not installed as an executable on this server, this is necessary to execute the LDF query properly.");
         }
 
         // Initiate the curl statement
@@ -449,16 +449,16 @@ class LDFHandler implements SemanticHandlerInterface
 
         if (!$response) {
             $curl_err = curl_error($ch);
-            \Log::error("Something went wrong while executing a count sparql query. The request we put together was: $uri.");
+            \Log::error("Something went wrong while executing an LDF query. The request we put together was: $uri.");
         }
 
         $response_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 
-        // According to the SPARQL 1.1 spec, a SPARQL endpoint can only return 200,400,500 reponses
+        // According to the LDF 1.1 spec, a LDF endpoint can only return 200,400,500 reponses
         if ($response_code == '400') {
-            \Log::error("The SPARQL endpoint returned a 400 error. The error was: $response. The URI was: $uri");
+            \Log::error("The LDF endpoint returned a 400 error. The error was: $response. The URI was: $uri");
         } elseif ($response_code == '500') {
-            \Log::error("The SPARQL endpoint returned a 500 error. The URI was: $uri");
+            \Log::error("The LDF endpoint returned a 500 error. The URI was: $uri");
         }
 
         curl_close($ch);
