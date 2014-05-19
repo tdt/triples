@@ -379,7 +379,7 @@ class LDFHandler implements SemanticHandlerInterface
                                         $total_triples += $page_size;
                                     }
                                 } catch (\EasyRdf_Parser_Exception $ex) {
-                                    \Log::error("Failed to parse turtle content from the LDF endpoint: $endpoint");
+                                    \Log::error("Failed to parse turtle content from the LDF endpoint: $start_fragment");
                                 }
                             } else {
                                 \Log::error("Something went wrong while fetching the triples from a LDF source. The error was " . $response . ". The query was : " . $paged_fragment);
