@@ -74,7 +74,7 @@ class TripleRepository implements TripleRepositoryInterface
 
         // If there's more room for triples, and the sparql can provide sufficient triples
         // according to the paging parameters, add triples from the sparql
-        if ($graph->countTriples() < $limit && $offset < $sparql_triples_count && $sparql_triples_count > $offset) {
+        if ($graph->countTriples() < $limit && $offset < $sparql_triples_count) {
 
             // For every semantic source, count the triples we'll get out of them (sparql and ldf for the moment)
             $graph = $this->sparql_handler->addTriples($base_uri, $graph, $limit, $offset);
@@ -82,7 +82,7 @@ class TripleRepository implements TripleRepositoryInterface
 
         $ldf_triples_count = $this->ldf_handler->getCount($base_uri);
 
-        if ($graph->countTriples() < $limit && $offset < $ldf_triples_count && $ldf_triples_count > $offset) {
+        if ($graph->countTriples() < $limit && $offset < $ldf_triples_count) {
 
             $graph = $this->ldf_handler->addTriples($base_uri, $graph, $limit, $offset);
         }

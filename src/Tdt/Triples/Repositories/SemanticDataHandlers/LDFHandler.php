@@ -99,35 +99,36 @@ class LDFHandler implements SemanticHandlerInterface
             // Make the LDF query (basic GET to the endpoint, should provide us with a hydra:totalItems or void:triples entry)
             $accept = array("Accept: text/turtle,*/*;q=0.0");
 
+            $response = '';
             if (Cache::has($entire_fragment)) {
                 $response = Cache::has($entire_fragment);
             } else {
                 $response = $this->executeUri($entire_fragment, $accept);
+            }
 
-                if ($response) {
+            if ($response) {
                     // Try decoding it into turtle, if not something is wrong with the response body
-                    try {
-                        $graph = new \EasyRdf_Graph();
+                try {
+                    $graph = new \EasyRdf_Graph();
 
-                        $parser = new \EasyRdf_Parser_Turtle();
+                    $parser = new \EasyRdf_Parser_Turtle();
 
-                        $parser->parse($graph, $response, 'turtle', null);
+                    $parser->parse($graph, $response, 'turtle', null);
 
                         // Fetch the count (hydra:totalItems or void:triples)
-                        $total_items = $graph->getLiteral($entire_fragment, 'hydra:totalItems');
+                    $total_items = $graph->getLiteral($entire_fragment, 'hydra:totalItems');
 
-                        if (is_null($total_items)) {
-                            $total_items = $graph->getLiteral($entire_fragment, 'void:triples');
-                        }
-
-                        if (!is_null($total_items)) {
-                            $triples_amount += $total_items->getValue();
-
-                            Cache::put($entire_fragment, $total_items->getValue(), 5);
-                        }
-                    } catch (\EasyRdf_Parser_Exception $ex) {
-                        \Log::error("Failed to parse turtle content from the LDF endpoint: $endpoint");
+                    if (is_null($total_items)) {
+                        $total_items = $graph->getLiteral($entire_fragment, 'void:triples');
                     }
+
+                    if (!is_null($total_items)) {
+                        $triples_amount += $total_items->getValue();
+
+                        Cache::put($entire_fragment, $total_items->getValue(), 5);
+                    }
+                } catch (\EasyRdf_Parser_Exception $ex) {
+                    \Log::error("Failed to parse turtle content from the LDF endpoint: $endpoint");
                 }
             }
         }
@@ -201,7 +202,7 @@ class LDFHandler implements SemanticHandlerInterface
             $triples = $graph->toRdfPhp();
         } else {
              // Change all of the base (startfragment) URI's to our own base URI
-            $triples = $tmp_graph->toRdfPhp();
+            $triples = $graph->toRdfPhp();
         }
 
         // Unset the #dataset
