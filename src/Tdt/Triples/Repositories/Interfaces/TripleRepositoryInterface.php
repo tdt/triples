@@ -23,13 +23,12 @@ interface TripleRepositoryInterface
     /**
      * Add void and hydra meta-data to an existing graph
      *
-     * @param string        $base_uri The URI of the request
      * @param EasyRdf_Graph $graph    The graph to which meta data has to be added
      * @param integer       $count    The total amount of triples that match the URI
      *
      * @return EasyRdf_Graph $graph
      */
-    public function addMetaTriples($base_uri, $graph, $limit, $offset, $count);
+    public function addMetaTriples($graph, $limit, $offset, $count);
 
     /**
      * Return the total amount of triples that

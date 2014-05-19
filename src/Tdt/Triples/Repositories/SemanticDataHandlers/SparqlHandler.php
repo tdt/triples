@@ -36,7 +36,6 @@ class SparqlHandler implements SemanticHandlerInterface
 
     private function hasParameters()
     {
-
         $sparql_param_defaults = array('?s', '?p', '?o');
 
         foreach (SparqlQueryBuilder::getParameters() as $param) {
@@ -214,12 +213,21 @@ class SparqlHandler implements SemanticHandlerInterface
 
                     $query_uri = $endpoint . '?query=' . $query . '&format=' . urlencode("application/rdf+xml");
 
-                    $result = $this->executeUri($query_uri, array(), $user, $pw);
+                    // Check for caching
+                    $cache_string = $this->buildCacheString($sparql_source['id'], $query_uri);
+
+                    if (Cache::has($cache_string)) {
+                        $result = Cache::get($cache_string);
+                    } else {
+
+                        $result = $this->executeUri($query_uri, array(), $user, $pw);
+                    }
 
                     if (!empty($result) && $result[0] == '<') {
 
                         // Parse the triple response and retrieve the triples from them
                         $result_graph = new \EasyRdf_Graph();
+
                         $parser = new \EasyRdf_Parser_RdfXml();
 
                         $parser->parse($result_graph, $result, 'rdfxml', null);
@@ -229,7 +237,10 @@ class SparqlHandler implements SemanticHandlerInterface
                         $total_triples += $count - $offset;
 
                     } else {
-                        \Log::error("Something went wrong while fetching the triples from a sparql source. The error was " . $result . ". The query was : " . $query_uri);
+
+                        $sparql_id = $sparql_source['id'];
+
+                        \Log::error("Something went wrong while fetching the triples from the sparql source with id $sparql_id. The error was " . $result . ". The query was : " . $query_uri);
                     }
 
                 } else {
@@ -247,19 +258,6 @@ class SparqlHandler implements SemanticHandlerInterface
     }
 
     /**
-     * Return a string used for caching based on the id of the Sparql source and the query
-     *
-     * @param int    $id
-     * @param string $query
-     *
-     * @return string
-     */
-    private function buildCacheString($id, $query)
-    {
-        return sha1('sparql_' . $id . '_' . $query);
-    }
-
-    /**
      * Merge two graphs and return the result
      *
      * @param EasyRdf_Graph $graph
@@ -274,6 +272,19 @@ class SparqlHandler implements SemanticHandlerInterface
         $graph->parse($turtle_graph, 'turtle');
 
         return $graph;
+    }
+
+    /**
+     * Return a string used for caching based on the id of the Sparql source and the query
+     *
+     * @param int    $id
+     * @param string $query
+     *
+     * @return string
+     */
+    private function buildCacheString($id, $query)
+    {
+        return sha1('ldf_' . $id . '_' . $query);
     }
 
     /**

@@ -93,7 +93,7 @@ class TripleRepository implements TripleRepositoryInterface
         }
 
         // Add the void and hydra triples to the resulting graph
-        $graph = $this->addMetaTriples($base_uri, $graph, $original_limit, $original_offset, $total_triples_count);
+        $graph = $this->addMetaTriples($graph, $original_limit, $original_offset, $total_triples_count);
 
         return $graph;
     }
@@ -353,13 +353,12 @@ class TripleRepository implements TripleRepositoryInterface
     /**
      * Add void and hydra meta-data to an existing graph
      *
-     * @param string        $base_uri The URI of the request
      * @param EasyRdf_Graph $graph    The graph to which meta data has to be added
      * @param integer       $count    The total amount of triples that match the URI
      *
      * @return EasyRdf_Graph $graph
      */
-    public function addMetaTriples($base_uri, $graph, $limit, $offset, $count)
+    public function addMetaTriples($graph, $limit, $offset, $count)
     {
         // Add the void and hydra namespace to the EasyRdf framework
         \EasyRdf_Namespace::set('hydra', 'http://www.w3.org/ns/hydra/core#');
@@ -370,9 +369,7 @@ class TripleRepository implements TripleRepositoryInterface
         $root = \Request::root();
         $root .= '/';
 
-        if (empty($base_uri)) {
-            $base_uri = $root . 'all';
-        }
+        $base_uri = $root . 'all';
 
         $identifier = str_replace($root, '', $base_uri);
 
@@ -546,20 +543,6 @@ class TripleRepository implements TripleRepositoryInterface
     }
 
     /**
-     * Create a string based on some variables, used for caching results from other semantic endpoints
-     *
-     * @param string  $type  The type of the semantic source
-     * @param integer $id    The id of the semantic source type
-     * @param string  $query The query of which the result will be cached (or has already been so)
-     *
-     * @return string
-     */
-    private function buildCacheString($type, $id, $query)
-    {
-        return sha1($type . '_' . $id . '_' . $query);
-    }
-
-    /**
      * Return paging headers
      *
      * @param integer $limit  The size of a page
@@ -595,80 +578,5 @@ class TripleRepository implements TripleRepositoryInterface
         }
 
         return $paging;
-    }
-
-    /**
-     * Count the amount of triples that are in the ARC2 store given a certain base_uri
-     *
-     * @param string $base_uri
-     *
-     * @return integer
-     */
-    private function countARC2Triples($base_uri)
-    {
-        $count_query = $this->query_builder->createCountQuery($base_uri);
-
-        $store = $this->setUpArc2Store();
-
-        $result = $store->query($count_query, 'raw');
-
-        if (!empty($result['rows'])) {
-            return $result['rows'][0]['count'];
-        }
-
-        return 0;
-    }
-
-    /**
-     * Execute a query using cURL and return the result.
-     * This function will abort upon error.
-     */
-    private function executeUri($uri, $headers, $user = '', $password = '')
-    {
-        // Check if curl is installed on this machine
-        if (!function_exists('curl_init')) {
-            \App::abort(500, "cURL is not installed as an executable on this server, this is necessary to execute the SPARQL query properly.");
-        }
-
-        // Initiate the curl statement
-        $ch = curl_init();
-
-        // If credentials are given, put the HTTP auth header in the cURL request
-        if (!empty($user)) {
-
-            curl_setopt($ch, CURLOPT_HTTPAUTH, CURLAUTH_ANY);
-            curl_setopt($ch, CURLOPT_USERPWD, $user . ":" . $password);
-        }
-
-        if (!empty($headers)) {
-            curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-        }
-
-        // Set the request uri
-        curl_setopt($ch, CURLOPT_URL, $uri);
-
-        // Request for a string result instead of having the result being outputted
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-
-        // Execute the request
-        $response = curl_exec($ch);
-
-        if (!$response) {
-            $curl_err = curl_error($ch);
-            \Log::error("Something went wrong while executing a count sparql query. The request we put together was: $uri.");
-        }
-
-        $response_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-
-        // According to the SPARQL 1.1 spec, a SPARQL endpoint can only return 200,400,500 reponses
-        if ($response_code == '400') {
-            \Log::error("The SPARQL endpoint returned a 400 error. The error was: $response. The URI was: $uri");
-        } elseif ($response_code == '500') {
-            \Log::error("The SPARQL endpoint returned a 500 error. The URI was: $uri");
-        }
-
-        curl_close($ch);
-
-        return $response;
     }
 }

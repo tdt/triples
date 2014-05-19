@@ -106,6 +106,11 @@ class TriplesController extends \Controller
         // Use the core package's authentication for now
         Auth::requirePermissions('dataset.create');
 
+        // If id is null, abort
+        if (is_null($id)) {
+            \App::abort(404, "Please provide a fitting id with the request, the id we found is null.");
+        }
+
         $input = $this->fetchInput();
 
         $result = $this->semantic_source->update($id, $input);

@@ -3,6 +3,7 @@
 namespace Tdt\Triples\Repositories\SemanticDataHandlers;
 
 use Tdt\Triples\Repositories\Interfaces\LdfSourceRepositoryInterface;
+use Tdt\Core\Cache\Cache;
 
 class LDFHandler implements SemanticHandlerInterface
 {
@@ -76,30 +77,35 @@ class LDFHandler implements SemanticHandlerInterface
             // Make the LDF query (basic GET to the endpoint, should provide us with a hydra:totalItems or void:triples entry)
             $accept = array("Accept: text/turtle,*/*;q=0.0");
 
-            $response = $this->executeUri($entire_fragment, $accept);
+            if (Cache::has($entire_fragment)) {
+                $response = Cache::has($entire_fragment);
+            } else {
+                $response = $this->executeUri($entire_fragment, $accept);
 
-            if ($response) {
-                // Try decoding it into turtle, if not something is wrong with the response body
-                try {
-                    $graph = new \EasyRdf_Graph();
+                if ($response) {
+                    // Try decoding it into turtle, if not something is wrong with the response body
+                    try {
+                        $graph = new \EasyRdf_Graph();
 
-                    $parser = new \EasyRdf_Parser_Turtle();
+                        $parser = new \EasyRdf_Parser_Turtle();
 
-                    $parser->parse($graph, $response, 'turtle', null);
+                        $parser->parse($graph, $response, 'turtle', null);
 
-                    // Fetch the count (hydra:totalItems or void:triples)
+                        // Fetch the count (hydra:totalItems or void:triples)
+                        $total_items = $graph->getLiteral($entire_fragment, 'hydra:totalItems');
 
-                    $total_items = $graph->getLiteral($entire_fragment, 'hydra:totalItems');
+                        if (is_null($total_items)) {
+                            $total_items = $graph->getLiteral($entire_fragment, 'void:triples');
+                        }
 
-                    if (is_null($total_items)) {
-                        $total_items = $graph->getLiteral($entire_fragment, 'void:triples');
+                        if (!is_null($total_items)) {
+                            $triples_amount += $total_items->getValue();
+
+                            Cache::put($entire_fragment, $total_items->getValue(), 5);
+                        }
+                    } catch (\EasyRdf_Parser_Exception $ex) {
+                        \Log::error("Failed to parse turtle content from the LDF endpoint: $endpoint");
                     }
-
-                    if (!is_null($total_items)) {
-                        $triples_amount += $total_items->getValue();
-                    }
-                } catch (\EasyRdf_Parser_Exception $ex) {
-                    \Log::error("Failed to parse turtle content from the LDF endpoint: $endpoint");
                 }
             }
         }
@@ -246,7 +252,13 @@ class LDFHandler implements SemanticHandlerInterface
             // Make the LDF query (basic GET to the endpoint, should provide us with a hydra:totalItems or void:triples entry)
             $accept = array("Accept: text/turtle,*/*;q=0.0");
 
-            $response = $this->executeUri($entire_fragment, $accept);
+            $response = '';
+
+            if (Cache::has($entire_fragment)) {
+                $response = Cache::get($entire_fragment);
+            } else {
+                $response = $this->executeUri($entire_fragment, $accept);
+            }
 
             if ($response) {
 
@@ -261,7 +273,7 @@ class LDFHandler implements SemanticHandlerInterface
 
                     $parser->parse($tmp_graph, $response, 'turtle', null);
 
-                            // Fetch the count (hydra:totalItems or void:triples)
+                    // Fetch the count (hydra:totalItems or void:triples)
                     $count = $tmp_graph->getLiteral($entire_fragment, 'hydra:totalItems');
 
                     $page_size = $tmp_graph->getLiteral($entire_fragment, 'hydra:itemsPerPage');
@@ -272,24 +284,27 @@ class LDFHandler implements SemanticHandlerInterface
 
                     if (is_null($count) || is_null($page_size)) {
 
-                            // Skip, the count has not been found on this endpoint
+                        // Skip, the count has not been found on this endpoint
                         $count = -1;
 
                         \Log::warning("An LDF endpoint's count could not be retrieved from the uri: $entire_fragment");
                     } else {
                         $count = $count->getValue();
+
                         $page_size = $page_size->getValue();
+
+                        Cache::put($entire_fragment, $response, 5);
                     }
 
-                        // If the amount of matching triples is higher than the offset
-                        // add them and update the offset, if not higher, then only update the offset
+                    // If the amount of matching triples is higher than the offset
+                    // add them and update the offset, if not higher, then only update the offset
                     if ($count > $offset) {
 
-                            // Read the triples from the LDF
+                        // Read the triples from the LDF
                         $query_limit = $limit - $total_triples;
 
-                            // There's no way of giving along the page size (not that we can presume)
-                            // So we have to make a numer of requests
+                        // There's no way of giving along the page size (not that we can presume)
+                        // So we have to make a numer of requests
                         $amount_of_requests = ceil($query_limit / $page_size);
 
                         for ($i = 0; $i < $amount_of_requests; $i++) {
@@ -302,14 +317,20 @@ class LDFHandler implements SemanticHandlerInterface
                                 $paged_fragment .= '?page=' . $i;
                             }
 
-                                    // Ask for turtle
+                            // Ask for turtle
                             $accept = array('Accept: text/turtle');
 
-                            $response = $this->executeUri($paged_fragment, $accept);
+                            $response = '';
+
+                            if (Cache::has($paged_fragment)) {
+                                $response = Cache::get($paged_fragment);
+                            } else {
+                                $response = $this->executeUri($paged_fragment, $accept);
+                            }
 
                             if ($response) {
 
-                                    // Try decoding it into turtle, if not something is wrong with the response body
+                                // Try decoding it into turtle, if not something is wrong with the response body
                                 try {
                                     $tmp_graph = new \EasyRdf_Graph();
 
@@ -317,7 +338,7 @@ class LDFHandler implements SemanticHandlerInterface
 
                                     $parser->parse($tmp_graph, $response, 'turtle', $start_fragment);
 
-                                        // Fetch the count (hydra:totalItems or void:triples)
+                                    // Fetch the count (hydra:totalItems or void:triples)
                                     $total_items = $tmp_graph->getLiteral($paged_fragment, 'hydra:totalItems');
 
                                     if (is_null($total_items)) {
@@ -326,7 +347,9 @@ class LDFHandler implements SemanticHandlerInterface
 
                                     if (!is_null($total_items)) {
 
-                                            // This needs to be a function of a different helper class for LDF endpoints
+                                        Cache::put($paged_fragment, $tmp_graph, 5);
+
+                                        // This needs to be a function of a different helper class for LDF endpoints
                                         $tmp_graph = $this->rebaseGraph($start_fragment, $tmp_graph);
 
                                         $graph = $this->mergeGraph($graph, $tmp_graph);
@@ -349,11 +372,11 @@ class LDFHandler implements SemanticHandlerInterface
                     if ($offset < 0) {
                         $offset = 0;
                     }
-
-
                 } catch (\EasyRdf_Parser_Exception $ex) {
                     \Log::error("Failed to parse turtle content from the LDF endpoint: $endpoint");
                 }
+            } else {
+                \Log::warning("Couldn't fetch a proper response for the fragment: $entire_fragment.");
             }
 
         }
