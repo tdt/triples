@@ -52,8 +52,22 @@ class LDFHandler implements SemanticHandlerInterface
 
             $query_parts = explode('&', $query_string);
 
+            // Check if a path is given, in which case we'll have to append it as a subject
+            // query string parameters (http://foo/bar/resource/subresource will result
+            // in http://ldf?subject=http://foo/bar/resource/subresource)
+
+            $path = \Request::path();
+
+            $subject = null;
+
+            if (!empty($path) && strtolower($path) != 'all') {
+                $subject = \Request::url();
+            }
+
             // Don't let paging parameters in the re-constructed query string
             $invalid_q_string = array('page');
+
+            $subject_added = false;
 
             foreach ($query_parts as $part) {
 
@@ -62,9 +76,17 @@ class LDFHandler implements SemanticHandlerInterface
                     $couple = explode('=', $part);
 
                     if (!in_array($couple[0], $invalid_q_string)) {
-                        $q_string_raw .= $couple[0] . '=' . $couple[1] . '&';
+                        if (strtolower($couple[0]) == 'subject') {
+                            $q_string_raw .= $couple[0] . '=' . $subject . '&';
+                        } else {
+                            $q_string_raw .= $couple[0] . '=' . $couple[1] . '&';
+                        }
                     }
                 }
+            }
+
+            if (!$subject_added && !is_null($subject)) {
+                $q_string_raw .= 'subject' . '=' . $subject;
             }
 
             $entire_fragment = $startfragment;
