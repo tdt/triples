@@ -329,7 +329,10 @@ class SparqlHandler implements SemanticHandlerInterface
 
         if (!$response) {
             $curl_err = curl_error($ch);
+
             \Log::error("Something went wrong while executing a count sparql query. The request we put together was: $uri.");
+
+            \Log::error("The error we got was: $curl_err");
         }
 
         $response_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);

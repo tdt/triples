@@ -239,7 +239,7 @@ class LDFHandler implements SemanticHandlerInterface
     {
         $total_triples = $graph->countTriples();
 
-        // Iterate the LDF end points, not that ldf servers don't necessarily have page size's as a parameter
+        // Iterate the LDF end points, note that ldf servers don't necessarily have page size's as a parameter
         // But rather have a fixed page size
         foreach ($this->ldf_repo->getAll() as $ldf_conf) {
 
@@ -251,7 +251,7 @@ class LDFHandler implements SemanticHandlerInterface
             $query_parts = explode('&', $query_string);
 
             // Don't let paging parameters in the re-constructed query string
-            $invalid_q_string = array('page');
+            $invalid_q_string = array('page', 'page_size', 'limit', 'offset');
 
             foreach ($query_parts as $part) {
 
@@ -330,7 +330,10 @@ class LDFHandler implements SemanticHandlerInterface
                         // So we have to make a numer of requests
                         $amount_of_requests = ceil($query_limit / $page_size);
 
-                        for ($i = 0; $i < $amount_of_requests; $i++) {
+                        // Calculate the page offset from the offset parameter
+                        $page_offset = ceil($offset / $page_size);
+
+                        for ($i = $page_offset; $i < $amount_of_requests + $page_offset; $i++) {
 
                             $paged_fragment = $entire_fragment;
 
@@ -404,7 +407,6 @@ class LDFHandler implements SemanticHandlerInterface
 
         }
 
-
         return $graph;
     }
 
@@ -450,7 +452,9 @@ class LDFHandler implements SemanticHandlerInterface
 
         if (!$response) {
             $curl_err = curl_error($ch);
+
             \Log::error("Something went wrong while executing an LDF query. The request we put together was: $uri.");
+            \Log::error("The error was $curl_err");
         }
 
         $response_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
