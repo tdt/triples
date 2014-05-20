@@ -60,7 +60,7 @@ class LDFHandler implements SemanticHandlerInterface
 
             $subject = null;
 
-            if (!empty($path) && strtolower($path) != 'all') {
+            if (!empty($path) && substr(strtolower($path), 0, 3) != 'all') {
                 $subject = \Request::url();
             }
 
