@@ -128,7 +128,7 @@ class LDFHandler implements SemanticHandlerInterface
                         Cache::put($entire_fragment, $total_items->getValue(), 5);
                     }
                 } catch (\EasyRdf_Parser_Exception $ex) {
-                    \Log::error("Failed to parse turtle content from the LDF endpoint: $endpoint");
+                    \Log::error("Failed to parse turtle content from the LDF fragment: $entire_fragment");
                 }
             }
         }
