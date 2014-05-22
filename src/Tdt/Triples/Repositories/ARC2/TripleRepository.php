@@ -404,7 +404,16 @@ class TripleRepository implements TripleRepositoryInterface
         // Add the template to the requested URI resource in the graph
         $graph->addResource($base_uri . '#dataset', 'hydra:search', $iri_template);
 
-        $full_url = $base_uri . '?';
+        $is_deferenced = false;
+
+        if (strtolower(\Request::segment(1)) != 'all') {
+            $full_url = \Request::root() . '/' . \Request::path();
+
+            $is_deferenced = true;
+        } else {
+            $full_url = $base_uri . '?';
+        }
+
         $template_url = $full_url;
         $templates = array('subject', 'predicate', 'object');
         $has_param = false;
@@ -447,7 +456,7 @@ class TripleRepository implements TripleRepositoryInterface
         $full_url = str_replace('#', '%23', $full_url);
         $template_url = str_replace('#', '%23', $template_url);
 
-        if ($base_uri != $root . 'all') {
+        if ($is_deferenced) {
             $full_url .= '#dataset';
         }
 
@@ -455,6 +464,7 @@ class TripleRepository implements TripleRepositoryInterface
         $graph->addLiteral($full_url, 'hydra:totalItems', \EasyRdf_Literal::create($count, null, 'xsd:integer'));
         $graph->addLiteral($full_url, 'void:triples', \EasyRdf_Literal::create($count, null, 'xsd:integer'));
         $graph->addLiteral($full_url, 'hydra:itemsPerPage', \EasyRdf_Literal::create($limit, null, 'xsd:integer'));
+        $graph->addResource($full_url, 'void:subset', \Request::root() . '/all#dataset');
 
         $paging_info = $this->getPagingInfo($limit, $offset, $count);
 

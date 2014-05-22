@@ -76,7 +76,8 @@ class LDFHandler implements SemanticHandlerInterface
                     $couple = explode('=', $part);
 
                     if (!in_array($couple[0], $invalid_q_string)) {
-                        if (strtolower($couple[0]) == 'subject') {
+                        if (strtolower($couple[0]) == 'subject' && !empty($subject)) {
+                            $subject_added = true;
                             $q_string_raw .= $couple[0] . '=' . $subject . '&';
                         } else {
                             $q_string_raw .= $couple[0] . '=' . $couple[1] . '&';
