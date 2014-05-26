@@ -151,7 +151,7 @@ class SparqlHandler implements SemanticHandlerInterface
                 );
             } else {
                 $count_query = $this->query_builder->createCountAllQuery(
-                    \Request::root(),
+                    $base_uri,
                     $sparql_source['named_graph'],
                     $sparql_source['depth']
                 );
@@ -199,7 +199,7 @@ class SparqlHandler implements SemanticHandlerInterface
                         );
                     } else {
                         $query = $this->query_builder->createFetchAllQuery(
-                            \Request::root(),
+                            $base_uri,
                             $sparql_source['named_graph'],
                             $query_limit,
                             $offset,
