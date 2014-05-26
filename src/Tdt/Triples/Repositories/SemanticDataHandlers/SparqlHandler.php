@@ -189,7 +189,7 @@ class SparqlHandler implements SemanticHandlerInterface
                     // Read the triples from the sparql endpoint
                     $query_limit = $limit - $total_triples;
 
-                    if (!empty($base_uri) && $base_uri != \Request::root()) {
+                    if ((!empty($base_uri) && $base_uri != \Request::root()) || $this->hasParameters()) {
                         $query = $this->query_builder->createFetchQuery(
                             $base_uri,
                             $sparql_source['named_graph'],
