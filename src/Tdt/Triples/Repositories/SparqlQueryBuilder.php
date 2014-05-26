@@ -122,8 +122,12 @@ class SparqlQueryBuilder
             $select_statement = 'select (count(*) as ?count) ';
         }
 
-        $filter_statement = '{ '. $vars .
-        'FILTER( regex(?s, "^' . $base_uri . '.*", "i" )). ';
+        $filter_statement = '{ '. $vars ;
+
+        if (!empty($base_uri)) {
+            $filter_statement .= 'FILTER( regex(?s, "^' . $base_uri . '.*", "i" )). ';
+        }
+
 
         if (!empty($depth_vars)) {
             $filter_statement .= 'OPTIONAL { ' . $depth_vars . '}';
