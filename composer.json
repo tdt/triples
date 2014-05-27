@@ -25,5 +25,18 @@
             "Tdt\\Triples\\": "src/"
         }
     },
+    "scripts": {
+        "pre-update-cmd": [
+            "php artisan clear-compiled"
+        ],
+        "post-install-cmd": [
+            "php artisan optimize",
+            "php artisan asset:publish tdt/triples"
+        ],
+        "post-update-cmd": [
+            "php artisan optimize",
+            "php artisan asset:publish tdt/triples"
+        ]
+    },
     "minimum-stability": "dev"
 }
