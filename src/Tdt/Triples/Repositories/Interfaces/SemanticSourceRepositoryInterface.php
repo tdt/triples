@@ -56,7 +56,7 @@ interface SemanticSourceRepositoryInterface
     public function getAllConfigurations($limit = PHP_INT_MAX, $offset = 0);
 
    /**
-    * Get the entire configruation for a semantic source
+    * Get the entire configuration for a semantic source
     *
     * @param integer $id The id of the semantic source
     *
