@@ -39,9 +39,9 @@ class LocalStoreHandler implements SemanticHandlerInterface
     {
         // Create the count query
 
-            // 1. If either the base uri is passed (normally shouldn't be equal to the request root) of a parameter is filled in
-            // then a normal count query is created, everything is inluded that matches tierh the base_uri or subject + its #.* variants
-            // 2. No base uri is given, no parameters are passed, return all triples + count for which the root uri is a subject
+        // 1. If either the base uri is passed (normally shouldn't be equal to the request root) of a parameter is filled in
+        // then a normal count query is created, everything is inluded that matches tierh the base_uri or subject + its #.* variants
+        // 2. No base uri is given, no parameters are passed, return all triples + count for which the root uri is a subject
 
         if ((!empty($base_uri) && $base_uri == \Request::root()) || $this->hasParameters()) {
 
