@@ -62,7 +62,7 @@ class TriplesController extends \Controller
      *
      * @return \Response
      */
-    public function get($id)
+    public function get($id = null)
     {
         Auth::requirePermissions('definitions.view');
 
