@@ -101,7 +101,7 @@ class SparqlQueryBuilder
      */
     public function createCountAllQuery($base_uri, $graph_name = null, $depth = 3)
     {
-        $vars = '?s ?p ?o. ';
+        $vars = '<' . $base_uri . '> ' . ' ?p ?o. ';
 
         $last_object = '?o';
         $depth_vars = '';
@@ -124,8 +124,8 @@ class SparqlQueryBuilder
 
         $filter_statement = '{ '. $vars ;
 
-        if (!empty($base_uri)) {
-            $filter_statement .= '{ ?s ?p ?o }';//'FILTER( regex(?s, "^' . $base_uri . '.*", "i" )). ';
+        if (empty($base_uri)) {
+            //$filter_statement .= '{  }';//'FILTER( regex(?s, "^' . $base_uri . '.*", "i" )). ';
         }
 
 
