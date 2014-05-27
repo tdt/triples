@@ -30,7 +30,7 @@ class TriplesController extends \Controller
                 return $this->put($id);
                 break;
             case "GET":
-                return $this->get();
+                return $this->get($id);
                 break;
             case "POST":
 
@@ -62,14 +62,19 @@ class TriplesController extends \Controller
      *
      * @return \Response
      */
-    public function get()
+    public function get($id)
     {
         Auth::requirePermissions('definitions.view');
 
-        $sources = $this->semantic_source->getAllConfigurations();
+        // If the id isn't empty
+        if (!empty($id)) {
+            $data = $this->semantic_source->getSourceConfiguration($id);
+        } else {
+            $data = $this->semantic_source->getAllConfigurations();
+        }
 
         $result = new Data();
-        $result->data = $sources;
+        $result->data = $data;
 
         return ContentNegotiator::getResponse($result, 'json');
     }

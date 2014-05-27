@@ -222,6 +222,11 @@ class DataController extends \Controller
             $o = '<' . $o . '>';
         } else if ($o != '?o' && substr($o, 0, 5) != '<http') {
             // If the object isn't URI, enquote it, unless it's meant as a sparql variable or an enclosed URI
+
+            // Make sure it isn't already enquoted
+            $o = rtrim($o, '"');
+            $o = ltrim($o, '"');
+
             $o = '"' . $o . '"';
         }
 

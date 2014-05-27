@@ -39,19 +39,19 @@ class LocalStoreHandler implements SemanticHandlerInterface
     {
         // Create the count query
 
-            // 1. If either the base uri is passed (normally shouldn't be equal to the request root) of a parameter is filled in
-            // then a normal count query is created, everything is inluded that matches tierh the base_uri or subject + its #.* variants
-            // 2. No base uri is given, no parameters are passed, return all triples + count for which the root uri is a subject
+        // 1. If either the base uri is passed (normally shouldn't be equal to the request root) of a parameter is filled in
+        // then a normal count query is created, everything is inluded that matches tierh the base_uri or subject + its #.* variants
+        // 2. No base uri is given, no parameters are passed, return all triples + count for which the root uri is a subject
 
-        if ((!empty($base_uri) && $base_uri != \Request::root()) || $this->hasParameters()) {
+        if ((!empty($base_uri) && $base_uri == \Request::root()) || $this->hasParameters()) {
 
             $count_query = $this->query_builder->createCountQuery(
-                $base_uri
+                null
             );
         } else {
 
             $count_query = $this->query_builder->createCountAllQuery(
-                \Request::root()
+                $base_uri
             );
         }
 
@@ -94,10 +94,10 @@ class LocalStoreHandler implements SemanticHandlerInterface
     {
         // Build the query
         if ((!empty($base_uri) && $base_uri != \Request::root()) || $this->hasParameters()) {
-            $query = $this->query_builder->createFetchQuery($base_uri, null, $limit, $offset);
+            $query = $this->query_builder->createFetchQuery(null, null, $limit, $offset);
         } else {
             $query = $this->query_builder->createFetchAllQuery(
-                \Request::root(),
+                $base_uri,
                 null,
                 $limit,
                 $offset
