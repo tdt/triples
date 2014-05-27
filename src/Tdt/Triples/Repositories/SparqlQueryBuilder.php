@@ -149,7 +149,7 @@ class SparqlQueryBuilder
      */
     public function createFetchAllQuery($base_uri, $graph_name = null, $limit = 100, $offset = 0, $depth = 3)
     {
-        $vars = '?s ?p ?o. ';
+        $vars = '<' . $base_uri . '> ' . ' ?p ?o. ';
 
         $last_object = '?o';
         $depth_vars = '';
@@ -170,8 +170,8 @@ class SparqlQueryBuilder
             $construct_statement = 'construct {' . $vars . $depth_vars . '}';
         }
 
-        $filter_statement = '{ '. $vars .
-        ' FILTER( regex(?s, "^' . $base_uri . '.*", "i" )). ';
+        $filter_statement = '{ '. $vars;
+        //' FILTER( regex(?s, "^' . $base_uri . '.*", "i" )). ';
 
         if (!empty($depth_vars)) {
             $filter_statement .= 'OPTIONAL { ' . $depth_vars . '}';
