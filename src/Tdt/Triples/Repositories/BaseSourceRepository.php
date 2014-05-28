@@ -19,6 +19,12 @@ class BaseSourceRepository
 
     protected $model;
 
+    protected $error_messages = array(
+        'uri' => "The uri provided could not be resolved.",
+        'file' => 'The uri provided could not be resolved, if the uri is a system path try putting file:// in front of it.',
+        'json' => 'The contents of the uri could not be parsed as JSON, make sure the JSON is valid.',
+    );
+
     /**
      *  Return validator based on the input
      *
@@ -28,7 +34,7 @@ class BaseSourceRepository
      */
     public function getValidator(array $input)
     {
-        return Validator::make($input, $this->rules);
+        return Validator::make($input, $this->rules, $this->error_messages);
     }
 
     /**
