@@ -54,7 +54,7 @@ class SparqlQueryBuilder
             $s = $base_uri;
         }
 
-        $vars = $base_uri . ' ' . $p . ' ' . $o . '.';//$s . ' ' . $p . ' ' . $o . '.';
+        $vars = '<' . $base_uri . '>' . ' ' . $p . ' ' . $o . '.';
 
         $last_object = $o;
         $depth_vars = '';
@@ -78,13 +78,11 @@ class SparqlQueryBuilder
             }
 
             $filter_statement = '{ {'. $vars .
-            //' FILTER( regex(?s, "^' . $base_uri . '#.*", "i" ) || regex(?s, "^' . $base_uri . '$", "i" ) ). ' .
             ' OPTIONAL { ' . $depth_vars . '}}}';
         } else {
             $select_statement = 'select (count(*) as ?count) ';
 
             $filter_statement = '{ '. $vars . '}' ;
-            //' FILTER( regex(?s, "^' . $base_uri . '#.*", "i" ) || regex(?s, "^' . $base_uri . '$", "i" )). }';
         }
 
         return $select_statement . $filter_statement;
@@ -101,7 +99,7 @@ class SparqlQueryBuilder
      */
     public function createCountAllQuery($base_uri, $graph_name = null, $depth = 3)
     {
-        $vars = '<' . $base_uri . '> ' . ' ?p ?o. ';
+        $vars = '<' . $base_uri . '> ?p ?o. ';
 
         $last_object = '?o';
         $depth_vars = '';
@@ -123,11 +121,6 @@ class SparqlQueryBuilder
         }
 
         $filter_statement = '{ '. $vars ;
-
-        if (empty($base_uri)) {
-            //$filter_statement .= '{  }';//'FILTER( regex(?s, "^' . $base_uri . '.*", "i" )). ';
-        }
-
 
         if (!empty($depth_vars)) {
             $filter_statement .= 'OPTIONAL { ' . $depth_vars . '}';
@@ -171,7 +164,6 @@ class SparqlQueryBuilder
         }
 
         $filter_statement = '{ '. $vars;
-        //' FILTER( regex(?s, "^' . $base_uri . '.*", "i" )). ';
 
         if (!empty($depth_vars)) {
             $filter_statement .= 'OPTIONAL { ' . $depth_vars . '}';
@@ -194,16 +186,19 @@ class SparqlQueryBuilder
     {
         list($s, $p, $o) = self::$query_string_params;
 
+        // Create a query that utilizes the template parameters in order to create a sparql query
         if (empty($base_uri)) {
             return $this->createVariableFetchQuery($graph_name, $limit, $offset);
         }
 
-        $vars = $s . ' ' . $p . ' ' . $o . '.';
+        $vars = '<' . $base_uri . '>' . ' ' . $p . ' ' . $o . '.';
 
         $last_object = $o;
+
         $depth_vars = '';
 
         $construct_statement = '';
+
         $filter_statement = '';
 
         // Only when no template parameter is given, add the depth parameters
@@ -223,14 +218,11 @@ class SparqlQueryBuilder
             }
 
             $filter_statement = '{ '. $vars .
-                                //' FILTER( regex(?s, "^' . $base_uri . '#.*", "i" ) || regex(?s, "^' . $base_uri . '$", "i" )). ' .
                                 'OPTIONAL { ' . $depth_vars . '}}';
         } else {
 
             $construct_statement = 'construct {' . $vars . ' }';
-            $filter_statement = '{ '. $vars .
-                                //' FILTER( regex(?s, "^' . $base_uri . '#.*", "i" ) || regex(?s, "^' . $base_uri . '$", "i" )).
-                                '}';
+            $filter_statement = '{ '. $vars . '}';
         }
 
         return $construct_statement . $filter_statement . ' offset ' . $offset . ' limit ' . $limit;
