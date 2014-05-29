@@ -93,7 +93,7 @@ class LocalStoreHandler implements SemanticHandlerInterface
     public function addTriples($base_uri, $graph, $limit, $offset)
     {
         // Build the query
-        if ((!empty($base_uri) && $base_uri != \Request::root()) || $this->hasParameters()) {
+        if ((!empty($base_uri) && $base_uri == \Request::root()) || $this->hasParameters()) {
             $query = $this->query_builder->createFetchQuery(null, null, $limit, $offset);
         } else {
             $query = $this->query_builder->createFetchAllQuery(
