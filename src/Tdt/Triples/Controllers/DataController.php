@@ -131,9 +131,6 @@ class DataController extends \Controller
             $format = ltrim($format, '.');
         }
 
-        // Get extension
-        $extension = (!empty($matches[2]))? $matches[2]: null;
-
         // Ignore the rest of the uri after /all
         $cache_string = sha1($this->getRawRequestURI(\Request::root()));
 
@@ -190,6 +187,8 @@ class DataController extends \Controller
 
         // Add the hydra namespace, it's not present in the easy rdf namespaces by default
         \EasyRdf_Namespace::set('hydra', 'http://www.w3.org/ns/hydra/core#');
+
+        \Log::info("The full url that triples received was: " . \Request::fullUrl() . " and the format passed to the negotiator was " . $format . ".");
 
         // Return the formatted response with content negotiation
         return ContentNegotiator::getResponse($data, $format);
