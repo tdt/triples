@@ -82,7 +82,6 @@ class SparqlHandler implements SemanticHandlerInterface
                 );
             }
 
-            dd($count_query);
             $endpoint = $sparql_source['endpoint'];
             $pw = $sparql_source['endpoint_password'];
             $user = $sparql_source['endpoint_user'];
