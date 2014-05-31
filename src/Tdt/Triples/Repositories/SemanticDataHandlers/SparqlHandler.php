@@ -34,19 +34,6 @@ class SparqlHandler implements SemanticHandlerInterface
         return $this->triples_read;
     }
 
-    private function hasParameters()
-    {
-        $sparql_param_defaults = array('?s', '?p', '?o');
-
-        foreach (SparqlQueryBuilder::getParameters() as $param) {
-            if (!in_array($param, $sparql_param_defaults)) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
     /**
      * Return the amount of triples according to the count query
      *
@@ -60,27 +47,12 @@ class SparqlHandler implements SemanticHandlerInterface
 
         foreach ($this->sparql_repo->getAll() as $sparql_source) {
 
-            // Create the count query
-
-            // 1. If either the base uri is passed (normally shouldn't be equal to the request root) of a parameter is filled in
-            // then a normal count query is created, everything is inluded that matches tierh the base_uri or subject + its #.* variants
-            // 2. No base uri is given, no parameters are passed, return all triples + count for which the root uri is a subject
-
-            if ((!empty($base_uri) && $base_uri == \Request::root()) || $this->hasParameters()) {
-
-                $count_query = $this->query_builder->createCountQuery(
-                    null,
-                    $sparql_source['named_graph'],
-                    $sparql_source['depth']
-                );
-            } else {
-
-                $count_query = $this->query_builder->createCountAllQuery(
-                    $base_uri,
-                    $sparql_source['named_graph'],
-                    $sparql_source['depth']
-                );
-            }
+            $count_query = $this->query_builder->createCountQuery(
+                $base_uri,
+                \Request::root(),
+                $sparql_source['named_graph'],
+                $sparql_source['depth']
+            );
 
             $endpoint = $sparql_source['endpoint'];
             $pw = $sparql_source['endpoint_password'];
@@ -143,19 +115,13 @@ class SparqlHandler implements SemanticHandlerInterface
 
             $endpoint = rtrim($endpoint, '/');
 
-            if ((!empty($base_uri) && $base_uri == \Request::root()) || $this->hasParameters()) {
-                $count_query = $this->query_builder->createCountQuery(
-                    null,
-                    $sparql_source['named_graph'],
-                    $sparql_source['depth']
-                );
-            } else {
-                $count_query = $this->query_builder->createCountAllQuery(
-                    $base_uri,
-                    $sparql_source['named_graph'],
-                    $sparql_source['depth']
-                );
-            }
+
+            $count_query = $this->query_builder->createCountQuery(
+                $base_uri,
+                \Request::root(),
+                $sparql_source['named_graph'],
+                $sparql_source['depth']
+            );
 
             // Check for caching
             $cache_string = $this->buildCacheString($sparql_source['id'], $count_query);
@@ -189,23 +155,14 @@ class SparqlHandler implements SemanticHandlerInterface
                     // Read the triples from the sparql endpoint
                     $query_limit = $limit - $total_triples;
 
-                    if ((!empty($base_uri) && $base_uri == \Request::root()) || $this->hasParameters()) {
-                        $query = $this->query_builder->createFetchQuery(
-                            null,
-                            $sparql_source['named_graph'],
-                            $query_limit,
-                            $offset,
-                            $sparql_source['depth']
-                        );
-                    } else {
-                        $query = $this->query_builder->createFetchAllQuery(
-                            $base_uri,
-                            $sparql_source['named_graph'],
-                            $query_limit,
-                            $offset,
-                            $sparql_source['depth']
-                        );
-                    }
+                    $query = $this->query_builder->createFetchQuery(
+                        $base_uri,
+                        \Request::root(),
+                        $sparql_source['named_graph'],
+                        $query_limit,
+                        $offset,
+                        $sparql_source['depth']
+                    );
 
                     $query = urlencode($query);
 

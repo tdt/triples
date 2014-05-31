@@ -2,6 +2,8 @@
 
 namespace Tdt\Triples\Repositories;
 
+use Illuminate\Http\Request;
+
 class SparqlQueryBuilder
 {
 
@@ -35,73 +37,33 @@ class SparqlQueryBuilder
     /**
      * Make and return a SPARQL count query, taken into account the passed query string parameters
      *
-     * @param string  $base_uri    The base_uri that will serve as a subject in the query
-     * @param string  $graph_name  The name of the graph to take into account for the query
-     * @param integer $depth       The depth of a subjects propagation
+     * @param string  $uri          The uri that will serve as a subject in the query
+     * @param string  $root         The base host name
+     * @param string  $graph_name   The name of the graph to take into account for the query
+     * @param integer $depth        The depth of a subjects propagation
+     * @param boolean $hash_variant Take hash variants of the subject into account
      *
      * @return string
      */
-    public function createCountQuery($base_uri = null, $graph_name = null, $depth = 3)
+    public function createCountQuery($uri, $root, $graph_name = null, $depth = 1, $hash_variant = false)
     {
         list($s, $p, $o) = self::$query_string_params;
 
-        if (empty($base_uri)) {
-            return $this->createVariableCountQuery($graph_name);
+        $subject = '<' . $uri . '>';
+
+        if (empty($uri) || $uri == $root) {
+            // If the URI is the same as the root, we have to check all subjects (== /all)
+            $subject = $s;
         }
 
-        // If subject has been passed, it should be the same as the base_uri
-        if (substr($s, 0, 4) == "http") {
-            $s = $base_uri;
+        // If hash variants are required, we have to create our pattern as such that it fits into a regex filter pattern
+        if ($hash_variant) {
+            $subject = '?s';
         }
 
-        $vars = '<' . $base_uri . '>' . ' ' . $p . ' ' . $o . '.';
+        $vars = $subject . ' ' . $p . ' ' . $o . '.';
 
         $last_object = $o;
-        $depth_vars = '';
-
-        $construct_statement = '';
-        $filter_statement = '';
-
-        if ($s == '?s' && $p == '?p' && $o == '?o') {
-
-            for ($i = 2; $i <= $depth; $i++) {
-
-                $depth_vars .= $last_object . ' ?p' . $i . ' ?o' . $i . '. ';
-
-                $last_object = '?o' . $i;
-            }
-
-            if (!empty($graph_name)) {
-                $select_statement = 'select (count(*) as ?count) FROM <' . $graph_name . '> ';
-            } else {
-                $select_statement = 'select (count(*) as ?count) ';
-            }
-
-            $filter_statement = '{ {'. $vars .
-            ' OPTIONAL { ' . $depth_vars . '}}}';
-        } else {
-            $select_statement = 'select (count(*) as ?count) ';
-
-            $filter_statement = '{ '. $vars . '}' ;
-        }
-
-        return $select_statement . $filter_statement;
-    }
-
-    /**
-     * Make and return a SPARQL count query, the base URI forms that start of eligible subjects
-     *
-     * @param string  $base_uri    The base_uri that will serve as a subject in the query
-     * @param string  $graph_name  The name of the graph to take into account for the query
-     * @param integer $depth       The depth of a subjects propagation
-     *
-     * @return string
-     */
-    public function createCountAllQuery($base_uri, $graph_name = null, $depth = 3)
-    {
-        $vars = '<' . $base_uri . '> ?p ?o. ';
-
-        $last_object = '?o';
         $depth_vars = '';
 
         $construct_statement = '';
@@ -114,13 +76,15 @@ class SparqlQueryBuilder
             $last_object = '?o' . $i;
         }
 
-        if (!empty($graph_name)) {
-            $select_statement = 'select (count(*) as ?count) FROM <' . $graph_name . '> ';
-        } else {
-            $select_statement = 'select (count(*) as ?count) ';
-        }
+        $filter_statement = '{ '. $vars;
 
-        $filter_statement = '{ '. $vars ;
+        if ($hash_variant) {
+
+            // We've set the subject to '?s' before, so we know ?s is our subject's variable name
+
+            $filter_statement .= ' FILTER( regex(?s, "^' . $uri . '#.*", "i" ) ';
+            $filter_statement .= '|| regex(?s, "^' . $uri . '$", "i" ) ). ';
+        }
 
         if (!empty($depth_vars)) {
             $filter_statement .= 'OPTIONAL { ' . $depth_vars . '}';
@@ -128,26 +92,51 @@ class SparqlQueryBuilder
 
         $filter_statement .= '}';
 
+        if (!empty($graph_name)) {
+            $select_statement = 'select (count(*) as ?count) FROM <' . $graph_name . '> ';
+        } else {
+            $select_statement = 'select (count(*) as ?count) ';
+        }
+
         return $select_statement . $filter_statement;
     }
 
     /**
-     * Make and return a SPARQL query, the base URI forms that start of eligible subjects and its triples
+     * Creates a query that fetches all of the triples
+     * of which the subject matches the base uri
      *
-     * @param string  $base_uri    The base_uri that will serve as a subject in the query
-     * @param string  $graph_name  The name of the graph to take into account for the query
-     * @param integer $depth       The depth of a subjects propagation
+     * @param string  $uri          The uri that will serve as a subject in the query
+     * @param string  $root         The base host name
+     * @param string  $graph_name   The name of the graph to take into account for the query
+     * @param integer $depth        The depth of a subjects propagation
+     * @param boolean $hash_variant Take hash variants of the subject into account
      *
      * @return string
      */
-    public function createFetchAllQuery($base_uri, $graph_name = null, $limit = 100, $offset = 0, $depth = 3)
+    public function createFetchQuery($uri, $root, $graph_name = null, $limit = 100, $offset = 0, $depth = 1, $hash_variant = false)
     {
-        $vars = '<' . $base_uri . '> ' . ' ?p ?o. ';
+        list($s, $p, $o) = self::$query_string_params;
 
-        $last_object = '?o';
+        $subject = '<' . $uri . '>';
+
+        if (empty($uri) || $uri == $root) {
+            // If the URI is the same as the root, we have to check all subjects (== /all)
+            $subject = $s;
+        }
+
+         // If hash variants are required, we have to create our pattern as such that it fits into a regex filter pattern
+        if ($hash_variant) {
+            $subject = '?s';
+        }
+
+        $vars = $subject . ' ' . $p . ' ' . $o . '.';
+
+        $last_object = $o;
+
         $depth_vars = '';
 
         $construct_statement = '';
+
         $filter_statement = '';
 
         for ($i = 2; $i <= $depth; $i++) {
@@ -165,65 +154,19 @@ class SparqlQueryBuilder
 
         $filter_statement = '{ '. $vars;
 
+        if ($hash_variant) {
+
+            // We've set the subject to '?s' before, so we know ?s is our subject's variable name
+
+            $filter_statement .= ' FILTER( regex(?s, "^' . $uri . '#.*", "i" ) ';
+            $filter_statement .= '|| regex(?s, "^' . $uri . '$", "i" ) ). ';
+        }
+
         if (!empty($depth_vars)) {
             $filter_statement .= 'OPTIONAL { ' . $depth_vars . '}';
         }
 
         $filter_statement .= '}';
-
-        return $construct_statement . $filter_statement . ' offset ' . $offset . ' limit ' . $limit;
-    }
-
-    /**
-     * Creates a query that fetches all of the triples
-     * of which the subject matches the base uri
-     *
-     * @param string $base_uri
-     *
-     * @return string
-     */
-    public function createFetchQuery($base_uri = null, $graph_name = null, $limit = 100, $offset = 0, $depth = 3)
-    {
-        list($s, $p, $o) = self::$query_string_params;
-
-        // Create a query that utilizes the template parameters in order to create a sparql query
-        if (empty($base_uri)) {
-            return $this->createVariableFetchQuery($graph_name, $limit, $offset);
-        }
-
-        $vars = '<' . $base_uri . '>' . ' ' . $p . ' ' . $o . '.';
-
-        $last_object = $o;
-
-        $depth_vars = '';
-
-        $construct_statement = '';
-
-        $filter_statement = '';
-
-        // Only when no template parameter is given, add the depth parameters
-        if ($s == '?s' && $p == '?p' && $o == '?o') {
-
-            for ($i = 2; $i <= $depth; $i++) {
-
-                $depth_vars .= $last_object . ' ?p' . $i . ' ?o' . $i . '. ';
-
-                $last_object = '?o' . $i;
-            }
-
-            if (!empty($graph_name)) {
-                $construct_statement = 'construct {' . $vars . $depth_vars . '} FROM <' . $graph_name . '>';
-            } else {
-                $construct_statement = 'construct {' . $vars . $depth_vars . '}';
-            }
-
-            $filter_statement = '{ '. $vars .
-                                'OPTIONAL { ' . $depth_vars . '}}';
-        } else {
-
-            $construct_statement = 'construct {' . $vars . ' }';
-            $filter_statement = '{ '. $vars . '}';
-        }
 
         return $construct_statement . $filter_statement . ' offset ' . $offset . ' limit ' . $limit;
     }
@@ -235,7 +178,7 @@ class SparqlQueryBuilder
      *
      * @return string
      */
-    public function createVariableCountQuery($graph_name = null)
+    public function createParameterCountQuery($graph_name = null)
     {
         list($s, $p, $o) = self::$query_string_params;
 
@@ -248,26 +191,6 @@ class SparqlQueryBuilder
         $filter_statement = "{ $s $p $o }";
 
         return $select_statement . $filter_statement;
-    }
-
-    /**
-     * Creates a query that fetches all of the triples that match with the query sting parameters
-     *
-     * @return string
-     */
-    public function createVariableFetchQuery($graph_name = null, $limit = 100, $offset = 0, $depth = 3)
-    {
-        list($s, $p, $o) = self::$query_string_params;
-
-        if (!empty($graph_name)) {
-            $construct_statement = "construct { $s $p $o } FROM <" . $graph_name . ">";
-        } else {
-            $construct_statement = "construct { $s $p $o }";
-        }
-
-        $filter_statement = "{ $s $p $o }";
-
-        return $construct_statement . $filter_statement . ' offset ' . $offset . ' limit ' . $limit;
     }
 
     /**
@@ -285,5 +208,21 @@ class SparqlQueryBuilder
         $query .= ' }';
 
         return $query;
+    }
+
+    /**
+     * Check if the request had any valuable request parameters
+     */
+    private function hasParameters()
+    {
+        $sparql_param_defaults = array('?s', '?p', '?o');
+
+        foreach (self::$query_string_params as $param) {
+            if (!in_array($param, $sparql_param_defaults)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
