@@ -43,6 +43,9 @@ class TripleRepository implements TripleRepositoryInterface
      */
     public function getTriples($base_uri, $limit = 100, $offset = 0, $dereference = false)
     {
+        // Check if hash variants should be used in the grah patterns to fetch matching triples
+        $this->checkHashVariants();
+
         $depth = null;
 
         if (!$dereference) {
@@ -597,5 +600,14 @@ class TripleRepository implements TripleRepositoryInterface
         }
 
         return $paging;
+    }
+
+    /**
+     * Check if hash variants should be used by the sparql query builder
+     *
+     */
+    private function checkHashVariants()
+    {
+        SparqlQueryBuilder::setHashVariant(\Request::query('hash_variants', false));
     }
 }

@@ -9,6 +9,8 @@ class SparqlQueryBuilder
 
     private static $query_string_params;
 
+    private static $hash_variant;
+
     public function __construct(array $query_string_params = array('?s', '?p', '?o'))
     {
         self::$query_string_params = $query_string_params;
@@ -45,20 +47,28 @@ class SparqlQueryBuilder
      *
      * @return string
      */
-    public function createCountQuery($uri, $root, $graph_name = null, $depth = 1, $hash_variant = false)
+    public function createCountQuery($uri, $root, $graph_name = null, $depth = 1)
     {
         list($s, $p, $o) = self::$query_string_params;
 
         $subject = '<' . $uri . '>';
 
         if (empty($uri) || $uri == $root) {
+
             // If the URI is the same as the root, we have to check all subjects (== /all)
             $subject = $s;
+
+            $uri = ltrim($subject, '<');
+            $uri = rtrim($uri, '>');
         }
 
         // If hash variants are required, we have to create our pattern as such that it fits into a regex filter pattern
-        if ($hash_variant) {
+        if (self::getHashVariant() && $uri != '?s') {
+
             $subject = '?s';
+        } else {
+            // No need to put a filter for hash variants, no subject URI has been given
+            self::$hash_variant = false;
         }
 
         $vars = $subject . ' ' . $p . ' ' . $o . '.';
@@ -78,7 +88,7 @@ class SparqlQueryBuilder
 
         $filter_statement = '{ '. $vars;
 
-        if ($hash_variant) {
+        if (self::getHashVariant()) {
 
             // We've set the subject to '?s' before, so we know ?s is our subject's variable name
 
@@ -113,7 +123,7 @@ class SparqlQueryBuilder
      *
      * @return string
      */
-    public function createFetchQuery($uri, $root, $graph_name = null, $limit = 100, $offset = 0, $depth = 1, $hash_variant = false)
+    public function createFetchQuery($uri, $root, $graph_name = null, $limit = 100, $offset = 0, $depth = 1)
     {
         list($s, $p, $o) = self::$query_string_params;
 
@@ -122,11 +132,17 @@ class SparqlQueryBuilder
         if (empty($uri) || $uri == $root) {
             // If the URI is the same as the root, we have to check all subjects (== /all)
             $subject = $s;
+
+            $uri = ltrim($subject, '<');
+            $uri = rtrim($uri, '>');
         }
 
          // If hash variants are required, we have to create our pattern as such that it fits into a regex filter pattern
-        if ($hash_variant) {
+        if (self::getHashVariant() && $uri != '?s') {
             $subject = '?s';
+        } else {
+            // No need to put a filter for hash variants, no subject URI has been given
+            self::$hash_variant = false;
         }
 
         $vars = $subject . ' ' . $p . ' ' . $o . '.';
@@ -154,7 +170,7 @@ class SparqlQueryBuilder
 
         $filter_statement = '{ '. $vars;
 
-        if ($hash_variant) {
+        if (self::$hash_variant) {
 
             // We've set the subject to '?s' before, so we know ?s is our subject's variable name
 
@@ -169,28 +185,6 @@ class SparqlQueryBuilder
         $filter_statement .= '}';
 
         return $construct_statement . $filter_statement . ' offset ' . $offset . ' limit ' . $limit;
-    }
-
-    /**
-     * Make and return a SPARQL count query, taken into account the passed query string parameters
-     *
-     * @param string $graph_name The graph_name that will be taken into account in the query
-     *
-     * @return string
-     */
-    public function createParameterCountQuery($graph_name = null)
-    {
-        list($s, $p, $o) = self::$query_string_params;
-
-        if (!empty($graph_name)) {
-            $select_statement = 'select (count(*) as ?count) FROM <' . $graph_name . '> ';
-        } else {
-            $select_statement = 'select (count(*) as ?count) ';
-        }
-
-        $filter_statement = "{ $s $p $o }";
-
-        return $select_statement . $filter_statement;
     }
 
     /**
@@ -224,5 +218,24 @@ class SparqlQueryBuilder
         }
 
         return false;
+    }
+
+    /**
+     * Set the hash_variant parameter, which decides if hash variants must be taken into account for dereferencing purposes
+     *
+     * @param boolean $hash_variant
+     */
+    public static function setHashVariant($hash_variant)
+    {
+        self::$hash_variant = $hash_variant;
+    }
+
+    /**
+     * Get the hash_variant parameter
+     *
+     */
+    public static function getHashVariant()
+    {
+        return self::$hash_variant;
     }
 }

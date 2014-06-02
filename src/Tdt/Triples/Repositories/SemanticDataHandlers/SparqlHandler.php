@@ -132,6 +132,8 @@ class SparqlHandler implements SemanticHandlerInterface
                 $depth
             );
 
+            \Log::info("sparql : " . $count_query . " base uri : " . $base_uri);
+
             // Check for caching
             $cache_string = $this->buildCacheString($sparql_source['id'], $count_query);
 
