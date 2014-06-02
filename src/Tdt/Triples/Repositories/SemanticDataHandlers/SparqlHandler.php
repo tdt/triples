@@ -37,21 +37,26 @@ class SparqlHandler implements SemanticHandlerInterface
     /**
      * Return the amount of triples according to the count query
      *
-     * @param string $base_uri The base_uri of the query
+     * @param string  $base_uri The base_uri of the query
+     * @param integer $depth    The depth the queries should have, handlers should not override this if given
      *
      * @return int
      */
-    public function getCount($base_uri)
+    public function getCount($base_uri, $depth = null)
     {
         $triples_amount = 0;
 
         foreach ($this->sparql_repo->getAll() as $sparql_source) {
 
+            if (is_null($depth)) {
+                $depth = $sparql_source['depth'];
+            }
+
             $count_query = $this->query_builder->createCountQuery(
                 $base_uri,
                 \Request::root(),
                 $sparql_source['named_graph'],
-                $sparql_source['depth']
+                $depth
             );
 
             $endpoint = $sparql_source['endpoint'];
@@ -99,10 +104,11 @@ class SparqlHandler implements SemanticHandlerInterface
      * @param EasyRdf_Graph $graph
      * @param int           $limit
      * @param int           $offset
+     * @param integer       $depth     The depth the queries should have, handlers should not override this if given
      *
      * @return EasyRdf_Graph
      */
-    public function addTriples($base_uri, $graph, $limit, $offset)
+    public function addTriples($base_uri, $graph, $limit, $offset, $depth = null)
     {
         $total_triples = $graph->countTriples();
 
@@ -115,12 +121,15 @@ class SparqlHandler implements SemanticHandlerInterface
 
             $endpoint = rtrim($endpoint, '/');
 
+            if (is_null($depth)) {
+                $depth = $sparql_source['depth'];
+            }
 
             $count_query = $this->query_builder->createCountQuery(
                 $base_uri,
                 \Request::root(),
                 $sparql_source['named_graph'],
-                $sparql_source['depth']
+                $depth
             );
 
             // Check for caching
@@ -161,7 +170,7 @@ class SparqlHandler implements SemanticHandlerInterface
                         $sparql_source['named_graph'],
                         $query_limit,
                         $offset,
-                        $sparql_source['depth']
+                        $depth
                     );
 
                     $query = urlencode($query);
@@ -241,7 +250,7 @@ class SparqlHandler implements SemanticHandlerInterface
      */
     private function buildCacheString($id, $query)
     {
-        return sha1('ldf_' . $id . '_' . $query);
+        return sha1('sparql_' . $id . '_' . $query);
     }
 
     /**

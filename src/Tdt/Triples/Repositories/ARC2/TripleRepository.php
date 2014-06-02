@@ -37,19 +37,27 @@ class TripleRepository implements TripleRepositoryInterface
      * @param string  $base_uri
      * @param integer $limit
      * @param integer $offset
+     * @param boolean $deference If dereferenced, use the depth of the configured semantic source, if not use 1 as depth
      *
      * @return EasyRdf_Graph
      */
-    public function getTriples($base_uri, $limit = 100, $offset = 0)
+    public function getTriples($base_uri, $limit = 100, $offset = 0, $dereference = false)
     {
+        $depth = null;
+
+        if (!$dereference) {
+            $depth = 1;
+        }
+
         $original_limit = $limit;
+
         $original_offset = $offset;
 
         // Fetch the total amount of triples
-        $total_triples_count = $this->getCount($base_uri);
+        $total_triples_count = $this->getCount($base_uri, $depth);
 
         // Fetch the local amount of triples
-        $count_local_triples = $this->local_store->getCount($base_uri);
+        $count_local_triples = $this->local_store->getCount($base_uri, $depth);
 
         // Create the resulting graph
         $graph = new \EasyRdf_Graph();
@@ -61,7 +69,7 @@ class TripleRepository implements TripleRepositoryInterface
             // Add triples from the local store
             $start_amount = $graph->countTriples();
 
-            $graph = $this->local_store->addTriples($base_uri, $graph, $limit, $offset);
+            $graph = $this->local_store->addTriples($base_uri, $graph, $limit, $offset, $depth);
 
             $offset -= $graph->countTriples() - $start_amount;
         }
@@ -70,21 +78,21 @@ class TripleRepository implements TripleRepositoryInterface
             $offset = 0;
         }
 
-        $sparql_triples_count = $this->sparql_handler->getCount($base_uri);
+        $sparql_triples_count = $this->sparql_handler->getCount($base_uri, $depth);
 
         // If there's more room for triples, and the sparql can provide sufficient triples
         // according to the paging parameters, add triples from the sparql
         if ($graph->countTriples() < $limit && $offset < $sparql_triples_count) {
 
             // For every semantic source, count the triples we'll get out of them (sparql and ldf for the moment)
-            $graph = $this->sparql_handler->addTriples($base_uri, $graph, $limit, $offset);
+            $graph = $this->sparql_handler->addTriples($base_uri, $graph, $limit, $offset, $depth);
         }
 
-        $ldf_triples_count = $this->ldf_handler->getCount($base_uri);
+        $ldf_triples_count = $this->ldf_handler->getCount($base_uri, $depth);
 
         if ($graph->countTriples() < $limit && $offset < $ldf_triples_count) {
 
-            $graph = $this->ldf_handler->addTriples($base_uri, $graph, $limit, $offset);
+            $graph = $this->ldf_handler->addTriples($base_uri, $graph, $limit, $offset, $depth);
         }
 
         // If the graph doesn't contain any triples, then the resource can't be resolved
@@ -264,7 +272,6 @@ class TripleRepository implements TripleRepositoryInterface
                 // Execute the query
                 $result = $store->query($query);
 
-                // TODO logging
                 if (!$result) {
                     \Log::error("Inserting the triple (" . $triple . ") failed, please make sure that it's a valid triple.");
                 } else {
@@ -537,16 +544,18 @@ class TripleRepository implements TripleRepositoryInterface
      * Return the total amount of triples that
      * have a subject that matches base_uri
      *
-     * @param string $base_uri
-     *@
+     * @param string  $base_uri The base uri that represents the subject of the triple pattern
+     * @param integer $depth    The depth the queries should have, handlers should not override this if given
+     *
      * @return integer
      */
-    public function getCount($base_uri)
+    public function getCount($base_uri, $depth = null)
     {
-        $triples_amount = $this->local_store->getCount($base_uri);
+        // Count the relevant triples from our local store
+        $triples_amount = $this->local_store->getCount($base_uri, $depth);
 
         // Count the relevant triples from sparql sources
-        $triples_amount += $this->sparql_handler->getCount($base_uri);
+        $triples_amount += $this->sparql_handler->getCount($base_uri, $depth);
 
         // Count the relevant triples from the LDF sources
         return $triples_amount += $this->ldf_handler->getCount($base_uri);

@@ -78,7 +78,7 @@ class DataController extends \Controller
 
                 list($limit, $offset) = Pager::calculateLimitAndOffset();
 
-                $result = $this->triples->getTriples($base_uri, 100, $offset);
+                $result = $this->triples->getTriples($base_uri, 100, $offset, true);
 
                 // If the graph contains no triples, then the uri couldn't resolve to anything, 404 it is
                 if ($result->countTriples() == 0) {
@@ -123,6 +123,9 @@ class DataController extends \Controller
         return ContentNegotiator::getResponse($data, $extension);
     }
 
+    /**
+     * GET /all
+     */
     public function solveQuery($format = null)
     {
         $data;

@@ -31,17 +31,23 @@ class LocalStoreHandler implements SemanticHandlerInterface
     /**
      * Return the amount of triples according to the count query
      *
-     * @param string $base_uri The URI of the request
+     * @param string  $base_uri The URI of the request
+     * @param integer $depth    The depth the queries should have, handlers should not override this if given (can be null)
      *
      * @return int
      */
-    public function getCount($base_uri)
+    public function getCount($base_uri, $depth = null)
     {
-        // Create the count query
+        if (is_null($depth)) {
+            $depth = 3;
+        }
 
+        // Create the count query
         $count_query = $this->query_builder->createCountQuery(
             $base_uri,
-            \Request::root()
+            \Request::root(),
+            null,
+            $depth
         );
 
         $store = $this->setUpArc2Store();
@@ -57,7 +63,6 @@ class LocalStoreHandler implements SemanticHandlerInterface
 
     private function hasParameters()
     {
-
         $sparql_param_defaults = array('?s', '?p', '?o');
 
         foreach (SparqlQueryBuilder::getParameters() as $param) {
@@ -76,19 +81,25 @@ class LocalStoreHandler implements SemanticHandlerInterface
      * @param EasyRdf_Graph $graph
      * @param int           $limit
      * @param int           $offset
+     * @param integer       $depth    The depth the queries should have, handlers should not override this if given
      *
      * @return EasyRdf_Graph
      */
-    public function addTriples($base_uri, $graph, $limit, $offset)
+    public function addTriples($base_uri, $graph, $limit, $offset, $depth = null)
     {
         // Build the query
+
+        if (is_null($depth)) {
+            $depth = 3;
+        }
 
         $query = $this->query_builder->createFetchQuery(
             $base_uri,
             \Request::root(),
             null,
             $limit,
-            $offset
+            $offset,
+            $depth
         );
 
         $store = $this->setUpArc2Store();
@@ -109,6 +120,7 @@ class LocalStoreHandler implements SemanticHandlerInterface
         if (!$result) {
 
             $errors = $store->getErrors();
+
             $message = array_shift($errors);
 
             \Log::error("Error occured in the triples package, while trying to retrieve triples: " . $message);

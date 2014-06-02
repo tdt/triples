@@ -74,6 +74,7 @@ class TriplesController extends \Controller
         }
 
         $result = new Data();
+
         $result->data = $data;
 
         return ContentNegotiator::getResponse($result, 'json');

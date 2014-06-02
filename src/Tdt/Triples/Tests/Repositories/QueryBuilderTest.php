@@ -5,7 +5,7 @@ namespace Tdt\Triples\Tests\Repositories;
 use Tdt\Triples\Repositories\ARC2\TripleRepository;
 use Tdt\Triples\Repositories\SparqlQueryBuilder as QueryBuilder;
 
-class QueryBuilderTest extends \Orchestra\Testbench\TestCase
+class QueryBuilderTest extends \PHPUnit_Framework_TestCase
 {
 
     public function testCountQueryWithoutParameters()
