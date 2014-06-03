@@ -31,16 +31,9 @@ class DataController extends \Controller
 
     public function resolve($identifier)
     {
-        // Split the uri to check for an (optional) extension (=format)
-        preg_match('/([^\.]*)(?:\.(.*))?$/', $identifier, $matches);
-
-        // URI is always the first match
-        $identifier = $matches[1];
+        list($identifier, $extension) = $this->processURI($identifier);
 
         $data;
-
-        // Get extension
-        $extension = (!empty($matches[2]))? $matches[2]: null;
 
         if ($this->isCoreDataset($identifier)) {
 
@@ -272,6 +265,43 @@ class DataController extends \Controller
         $url = str_replace('#', '%23', $url);
 
         return $url;
+    }
+
+    /**
+     * Process the URI and return the extension (=format) and the resource identifier URI
+     *
+     * @param string $uri The URI that has been passed
+     * @return array
+     */
+    private function processURI($uri)
+    {
+        $dot_position = strrpos($uri, '.');
+
+        if (!$dot_position) {
+            return array($uri, null);
+        }
+
+        // If a dot has been found, do a couple
+        // of checks to find out if it introduces a formatter
+        $uri_parts = explode('.', $uri);
+
+        $possible_extension = array_pop($uri_parts);
+
+        $possible_ext_class = strtoupper($possible_extension);
+
+        $uri = implode('.', $uri_parts);
+
+        $formatter_class = 'Tdt\\Core\\Formatters\\' . $possible_ext_class . 'Formatter';
+
+        if (!class_exists($formatter_class)) {
+
+            // Re-attach the dot with the latter part of the uri
+            $uri .= '.' . $possible_extension;
+
+            return array($uri, null);
+        }
+
+        return array($uri, $possible_extension);
     }
 
     /**
