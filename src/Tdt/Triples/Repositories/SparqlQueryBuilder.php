@@ -96,7 +96,7 @@ class SparqlQueryBuilder
             $filter_statement .= '|| regex(?s, "^' . $uri . '$", "i" ) ). ';
         }
 
-        if (!empty($depth_vars)) {
+        if (!empty($depth_vars) && !($subject == '?s' && $p == '?p' && $o == '?o')) {
             $filter_statement .= 'OPTIONAL { ' . $depth_vars . '}';
         }
 

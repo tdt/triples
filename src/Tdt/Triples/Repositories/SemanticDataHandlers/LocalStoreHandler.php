@@ -50,8 +50,6 @@ class LocalStoreHandler implements SemanticHandlerInterface
             $depth
         );
 
-        \Log::info("local count" . $count_query . " base uri : " . $base_uri);
-
         $store = $this->setUpArc2Store();
 
         $result = $store->query($count_query, 'raw');
