@@ -554,4 +554,30 @@ class QueryBuilderTest extends \PHPUnit_Framework_TestCase
 
         $this->assertEquals($expected_query, $count_query);
     }
+
+    // Count for host/sub/sub.space
+    public function testCountQueryWithDottedURI()
+    {
+        $query_builder = new QueryBuilder(array('?s', '?p', '?o'));
+
+        $count_query = $query_builder->createCountQuery('http://foo.test/sub/sub.space', 'http://foo.test', 'http://foo.test/namedgraph#version1', 3);
+
+        $expected_query = 'select (count(*) as ?count) FROM <http://foo.test/namedgraph#version1>'.
+                    ' { <http://foo.test/sub/sub.space> ?p ?o.OPTIONAL { ?o ?p2 ?o2. ?o2 ?p3 ?o3. }}';
+
+        $this->assertEquals($expected_query, $count_query);
+    }
+
+    // Construct for host/sub/sub.space
+    public function testConstructQueryWithDottedURI()
+    {
+        $query_builder = new QueryBuilder(array('?s', '?p', '?o'));
+
+        $construct_query = $query_builder->createFetchQuery('http://foo.test/sub/sub.space', 'http://foo.test', 'http://foo.test/namedgraph#version1', 150, 0, 3);
+
+        $expected_query = 'construct {<http://foo.test/sub/sub.space> ?p ?o.?o ?p2 ?o2. ?o2 ?p3 ?o3. } FROM <http://foo.test/namedgraph#version1>{ <http://foo.test/sub/sub.space> ?p ?o.OPTIONAL { ?o ?p2 ?o2. ?o2 ?p3 ?o3. }}'
+                        .' offset 0 limit 150';
+
+        $this->assertEquals($expected_query, $construct_query);
+    }
 }
