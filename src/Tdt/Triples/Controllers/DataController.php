@@ -113,7 +113,11 @@ class DataController extends \Controller
         \EasyRdf_Namespace::set('hydra', 'http://www.w3.org/ns/hydra/core#');
 
         // Return the formatted response with content negotiation
-        return ContentNegotiator::getResponse($data, $extension);
+        $response = ContentNegotiator::getResponse($data, $extension);
+
+        $response->header('Vary', 'Accept');
+
+        return $response;
     }
 
     /**
@@ -187,7 +191,11 @@ class DataController extends \Controller
         \Log::info("The full url that triples received was: " . \Request::fullUrl() . " and the format passed to the negotiator was " . $format . ".");
 
         // Return the formatted response with content negotiation
-        return ContentNegotiator::getResponse($data, $format);
+        $response = ContentNegotiator::getResponse($data, $format);
+
+        $response->header('Vary', 'Accept');
+
+        return $response;
     }
 
     /**
