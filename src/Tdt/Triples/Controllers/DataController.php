@@ -12,7 +12,7 @@ use Tdt\Core\Cache\Cache;
 use Tdt\Core\Pager;
 
 /**
- * DataController checks if the core application can resolve
+ * The DataController class checks if the core application can resolve
  * the uri. If not, the entire base uri forms a subject of which
  * all corresponding triples of all configured semantic sources are returned.
  *
@@ -29,12 +29,23 @@ class DataController extends \Controller
         $this->definition = $definition;
     }
 
+    /**
+     * Dereferences a URI only when the core application has no resource attributed to it
+     *
+     * @string $identifier The path of the URL
+     *
+     * @return \Response
+     */
     public function resolve($identifier)
     {
+        // Split the identifier from it's format (URI, json)
+        // Caveat: there is a small chance that e.g. URI.json is the full URI that
+        // needs to be dereferenced. (https://github.com/tdt/triples/issues/48)
         list($identifier, $extension) = $this->processURI($identifier);
 
         $data;
 
+        // If the identifier represents a dataset in core, ask core to deliver a response
         if ($this->isCoreDataset($identifier)) {
 
             $controller = \App::make('Tdt\Core\Datasets\DatasetController');
@@ -48,17 +59,21 @@ class DataController extends \Controller
             $format_helper = new FormatHelper();
             $data->formats = $format_helper->getAvailableFormats($data);
 
+        // The identifier can be a core non-dataset resource (e.g. discovery)
         } else if ($this->isCoreResource($identifier)) {
 
             $controller = \App::make('Tdt\Core\BaseController');
 
             return $controller->handleRequest($identifier);
 
+        // Nothing works out, try to dereference the URI
         } else {
 
+            // Rebuild the URI as is, the Symfony Request components url-decode everything
+            // Dereferencing however needs to deal with the exact request URI's
             $cache_string = sha1($this->getRawRequestURI(\Request::url()));
 
-            // Check cache
+            // Check if the cache already contains the dereferencing info
             if (Cache::has($cache_string)) {
                 $data = Cache::get($cache_string);
             } else {
@@ -69,13 +84,15 @@ class DataController extends \Controller
                     $base_uri = \Request::root();
                 }
 
+                // Calculate the limit and offset parameters
                 list($limit, $offset) = Pager::calculateLimitAndOffset();
 
+                // Fetch the triples that can be used to dereference the URI
                 $result = $this->triples->getTriples($base_uri, 100, $offset, true);
 
-                // If the graph contains no triples, then the uri couldn't resolve to anything, 404 it is
+                // If the graph contains no triples, then the URI couldn't resolve to anything, 404 it is
                 if ($result->countTriples() == 0) {
-                    \App::abort(404, "The resource couldn't be found, nor dereferenced.");
+                    \App::abort(404, "The resource could not be dereferenced. No matching triples were found.");
                 }
 
                 // Mock a tdt/core definition object that is used in the formatters
@@ -87,14 +104,15 @@ class DataController extends \Controller
                 $definition = array(
                     'resource_name' => $resource_name,
                     'collection_uri' => $collection_uri,
-                    );
+                );
 
                 $source_definition = array(
-                    'description' => 'Semantic data collected out the configuration of semantic data sources related to the given URI.',
+                    'description' => 'Semantic data collected retrieved from the configured semantic sources.',
                     'type' => 'Semantic',
-                    );
+                );
 
                 $data = new Data();
+
                 $data->definition = $definition;
                 $data->source_definition = $source_definition;
                 $data->data = $result;
@@ -121,7 +139,11 @@ class DataController extends \Controller
     }
 
     /**
-     * GET /all
+     * Resolve a graph pattern query (/all route)
+     *
+     * @param string $format The format of the request
+     *
+     * @return \Response
      */
     public function solveQuery($format = null)
     {
@@ -131,31 +153,35 @@ class DataController extends \Controller
             $format = ltrim($format, '.');
         }
 
-        // Ignore the rest of the uri after /all
+        // Ignore the rest of the uri after /all and work with the request parameters as they were given
         $cache_string = sha1($this->getRawRequestURI(\Request::root()));
 
-        // Check cache
+        // Check if the response to the query has been cached already
         if (Cache::has($cache_string)) {
             $data = Cache::get($cache_string);
         } else {
 
+            // Get the graph pattern query string parameters from the request
             list($s, $p, $o) = $this->getTemplateParameters();
 
+            // Pass them to our sparql query builder
             SparqlQueryBuilder::setParameters(array($s, $p, $o));
 
             $base_uri = null;
 
+            // If no parameter has been filled in, the URI we have to match triples with is the root of our application
             if ($s == '?s' && $p == '?p' && $o == '?o') {
                 $base_uri = \Request::root();
             }
 
+            // Fetch matching triples
             $result = $this->triples->getTriples(
                 $base_uri,
                 \Request::get('limit', 100),
                 \Request::get('offset', 0)
             );
 
-            // If the graph contains no triples, then the uri couldn't resolve to anything, 404 it is
+            // If the graph contains no triples, then the graph pattern couldn't resolve to anything, 404 it is
             if ($result->countTriples() == 0) {
                 \App::abort(404, "The resource couldn't be found, nor dereferenced.");
             }
@@ -166,7 +192,7 @@ class DataController extends \Controller
             );
 
             $source_definition = array(
-                'description' => 'Semantic data collected out the configuration of semantic data sources related to the given URI.',
+                'description' => 'Semantic data collected out the configured semantic data sources.',
                 'type' => 'Semantic',
             );
 
@@ -188,11 +214,11 @@ class DataController extends \Controller
         // Add the hydra namespace, it's not present in the easy rdf namespaces by default
         \EasyRdf_Namespace::set('hydra', 'http://www.w3.org/ns/hydra/core#');
 
-        \Log::info("The full url that triples received was: " . \Request::fullUrl() . " and the format passed to the negotiator was " . $format . ".");
-
         // Return the formatted response with content negotiation
         $response = ContentNegotiator::getResponse($data, $format);
 
+        // Pass a Vary header so that browsers know they have to take the accept header
+        // into consideration when they apply caching client side
         $response->header('Vary', 'Accept');
 
         return $response;
@@ -216,7 +242,6 @@ class DataController extends \Controller
             $s = '<' . $s . '>';
         }
 
-        // TODO expand prefixes
         if (substr($p, 0, 4) == "http") {
             $p = '<' . $p . '>';
         }
@@ -315,7 +340,7 @@ class DataController extends \Controller
     /**
      * Check if the identifier that has been passed is resolvable as a core resource
      *
-     * @param string $identifier The URI identifier of the resource to resolve
+     * @param string $identifier The URI identifier that is possibly a core source in the tdt/core (e.g. discovery)
      *
      * @return boolean
      */

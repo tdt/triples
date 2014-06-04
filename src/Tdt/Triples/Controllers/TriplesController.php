@@ -35,7 +35,7 @@ class TriplesController extends \Controller
             case "POST":
 
                 if (!empty($id)) {
-                    // Don't allow POSTS to configurations (only PUT and DELETE allowed)
+                    // Don't allow POSTS to specific configurations (only PUT and DELETE allowed)
                     \App::abort(405, "The HTTP method POST is not allowed on this resource. POST is only allowed on api/triples.");
                 }
 
@@ -107,6 +107,13 @@ class TriplesController extends \Controller
         }
     }
 
+    /**
+     * Update an existing semantic source
+     *
+     * @param integer $id The id of the semantic source that needs to be updated
+     *
+     * @return \Response
+     */
     public function put($id)
     {
         // Use the core package's authentication for now

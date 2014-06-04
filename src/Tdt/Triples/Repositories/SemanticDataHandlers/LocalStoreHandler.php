@@ -61,6 +61,9 @@ class LocalStoreHandler implements SemanticHandlerInterface
         return 0;
     }
 
+    /**
+     *
+     */
     private function hasParameters()
     {
         $sparql_param_defaults = array('?s', '?p', '?o');
@@ -150,7 +153,7 @@ class LocalStoreHandler implements SemanticHandlerInterface
             'db_user' => $mysql_config['username'],
             'db_pwd' => $mysql_config['password'],
             'store_name' => $mysql_config['prefix'],
-            );
+        );
 
         $store = \ARC2::getStore($config);
 

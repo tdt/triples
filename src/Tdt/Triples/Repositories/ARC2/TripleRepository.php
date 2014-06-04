@@ -56,10 +56,10 @@ class TripleRepository implements TripleRepositoryInterface
 
         $original_offset = $offset;
 
-        // Fetch the total amount of triples
+        // Fetch the total amount of matching triples, over all of the configured semantic sources
         $total_triples_count = $this->getCount($base_uri, $depth);
 
-        // Fetch the local amount of triples
+        // Fetch the local amount of matching triples
         $count_local_triples = $this->local_store->getCount($base_uri, $depth);
 
         // Create the resulting graph
@@ -103,14 +103,14 @@ class TripleRepository implements TripleRepositoryInterface
             \App::abort(404, 'The resource could not be found.');
         }
 
-        // Add the void and hydra triples to the resulting graph
+        // Add the void and hydra meta-data triples to the resulting graph
         $graph = $this->addMetaTriples($graph, $original_limit, $original_offset, $total_triples_count);
 
         return $graph;
     }
 
     /**
-     * Store (=cache) triples into a triplestore (or equivalents) for optimization
+     * Store triples into our local store
      *
      * @param integer $id     The id of the configured semantic source
      * @param array   $config The configuration needed to extract the triples
@@ -178,15 +178,16 @@ class TripleRepository implements TripleRepositoryInterface
                 break;
         }
 
+        // If the semantic source needs caching in our local store@
         if ($caching_necessary) {
 
             // Make the graph name to cache the triples into
             $graph_name = self::$graph_name . $id;
 
-            // Serialise the triples into turtle
+            // Serialise the triples into a turtle string
             $ttl = $graph->serialise('turtle');
 
-            // Parse the turlte into an ARC graph
+            // Parse the turtle into an ARC graph
             $arc_parser = \ARC2::getTurtleParser();
 
             $ser = \ARC2::getNTriplesSerializer();
@@ -195,11 +196,11 @@ class TripleRepository implements TripleRepositoryInterface
             $arc_parser->parse('', $ttl);
 
             // Serialize the triples again, this is because an EasyRdf_Graph has
-            // troubles with serializing unicode. The underlying bytes are
-            // not properly converted to utf8 characters by our serialize function
+            // troubles with serializing some unicode characters. The underlying bytes are
+            // not properly converted to utf8
             // A dump shows that all unicode encodings through serialization are the same (in easyrdf and arc)
             // however when we convert the string (binary) into a utf8, only the arc2 serialization
-            // comes out correctly, hence something beneath the encoding (byte sequences?) must hold some wrongs.
+            // comes out correctly, hence something beneath the encoding (byte sequences?) must hold some wrongs in the EasyRdf library.
             $triples = $ser->getSerializedTriples($arc_parser->getTriples());
 
             preg_match_all("/(<.*\.)/", $triples, $matches);
@@ -306,7 +307,7 @@ class TripleRepository implements TripleRepositoryInterface
             'db_user' => $mysql_config['username'],
             'db_pwd' => $mysql_config['password'],
             'store_name' => $mysql_config['prefix'],
-            );
+        );
 
         $store = \ARC2::getStore($config);
 
@@ -342,6 +343,7 @@ class TripleRepository implements TripleRepositoryInterface
 
     /**
      * Serialize triples to a format acceptable for a triplestore endpoint (utf8 chacracters)
+     *
      * @param string $triples
      *
      * @return string
@@ -527,7 +529,7 @@ class TripleRepository implements TripleRepositoryInterface
     }
 
     /**
-     * Merge two graphs and return the result
+     * Merge two graphs and return the resulting merged graph
      *
      * @param EasyRdf_Graph $graph
      * @param EasyRdf_Graph $input_graph

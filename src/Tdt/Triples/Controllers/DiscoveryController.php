@@ -54,7 +54,9 @@ class DiscoveryController extends \Controller
     }
 
     /**
-     * Create the put discovery documentation.
+     * Create the PUT discovery documentation
+     *
+     * @return \stdClass
      */
     private static function createPutDiscovery()
     {
@@ -111,7 +113,9 @@ class DiscoveryController extends \Controller
     }
 
     /**
-     * Create the put discovery documentation.
+     * Create the POST discovery documentation
+     *
+     * @return \stdClass
      */
     private static function createPostDiscovery()
     {
@@ -168,7 +172,9 @@ class DiscoveryController extends \Controller
     }
 
     /**
-     * Create the delete discovery documentation.
+     * Create the DELETE discovery documentation.
+     *
+     * @return \stdClass
      */
     private static function createDeleteDiscovery()
     {

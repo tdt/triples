@@ -27,7 +27,7 @@ class CacheTriples extends Command
      *
      * @var string
      */
-    protected $description = "Load data from a semantic source into our triple store. Old data belonging to the given configuration will be replaced by the new extracted data.";
+    protected $description = "Load data from a semantic source into our local triple store. If triples were already cached one from a certain semantic source, they will be removed and replaced by current triples from the semantic source.";
 
     /**
      * Execute the console command
@@ -41,24 +41,24 @@ class CacheTriples extends Command
 
         $semantic_sources = \App::make('Tdt\Triples\Repositories\Interfaces\SemanticSourceRepositoryInterface');
 
-        // Throws an error if the id isn't found, no need to reproduce
+        // Throws an error if no semantic source is found with the given $id
         $configuration = $semantic_sources->getSourceConfiguration($id);
 
         $triples = \App::make('Tdt\Triples\Repositories\Interfaces\TripleRepositoryInterface');
 
         $this->info("Configuration found, starting to load the triples from the source.");
 
-        $this->info("Deleting triples from the graph, if they're already present.");
+        $this->info("Deleting triples associated with the given semantic source id, if they're already present.");
 
         // Delete the triples from the graph first
         $triples->removeTriples($configuration['id']);
 
         $this->info("Extracting triples from the semantic source.");
 
-        // Cache the triples
+        // Cache the triples in our local store
         $triples->cacheTriples($id, $configuration);
 
-        $this->info("All triples were successfully loaded into the store");
+        $this->info("All triples were successfully loaded into the local store");
     }
 
     /**

@@ -86,6 +86,8 @@ class LDFHandler implements SemanticHandlerInterface
                 }
             }
 
+            // If no subject is given, pass our current URI (the one we need to dereference) as a subject
+            // to the LDF server
             if (!$subject_added && !is_null($subject)) {
                 $q_string_raw .= 'subject' . '=' . $subject;
             }
@@ -101,6 +103,7 @@ class LDFHandler implements SemanticHandlerInterface
             $accept = array("Accept: text/turtle,*/*;q=0.0");
 
             $response = '';
+
             if (Cache::has($entire_fragment)) {
                 $response = Cache::has($entire_fragment);
             } else {
@@ -108,7 +111,7 @@ class LDFHandler implements SemanticHandlerInterface
             }
 
             if ($response) {
-                    // Try decoding it into turtle, if not something is wrong with the response body
+                // Try decoding it into turtle, if not something is wrong with the response body
                 try {
                     $graph = new \EasyRdf_Graph();
 
@@ -116,7 +119,7 @@ class LDFHandler implements SemanticHandlerInterface
 
                     $parser->parse($graph, $response, 'turtle', null);
 
-                        // Fetch the count (hydra:totalItems or void:triples)
+                    // Fetch the count (hydra:totalItems or void:triples)
                     $total_items = $graph->getLiteral($entire_fragment, 'hydra:totalItems');
 
                     if (is_null($total_items)) {
@@ -126,6 +129,7 @@ class LDFHandler implements SemanticHandlerInterface
                     if (!is_null($total_items)) {
                         $triples_amount += $total_items->getValue();
 
+                        // Cache the requested fragment
                         Cache::put($entire_fragment, $total_items->getValue(), 5);
                     }
                 } catch (\EasyRdf_Parser_Exception $ex) {
