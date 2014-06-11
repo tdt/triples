@@ -226,7 +226,7 @@ class SemanticSourceRepository implements SemanticSourceRepositoryInterface
 
         // If no source type is given, abort the process.
         if (empty($type)) {
-            \App::abort(400, "Please provide a source type.");
+            \App::abort(400, "Please provide a source type, support source types are: ldf, rdf, sparql, turtle.");
         }
 
         return $type;

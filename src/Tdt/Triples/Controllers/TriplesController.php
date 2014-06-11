@@ -99,6 +99,7 @@ class TriplesController extends \Controller
         if (!empty($result) && is_array($result)) {
 
             $response = \Response::make("", 200);
+
             $response->header('Location', \URL::to('api/triples'));
 
             return $response;
@@ -114,7 +115,7 @@ class TriplesController extends \Controller
      *
      * @return \Response
      */
-    public function put($id)
+    public function put($id = null)
     {
         // Use the core package's authentication for now
         Auth::requirePermissions('dataset.create');
