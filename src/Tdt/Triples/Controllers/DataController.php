@@ -135,6 +135,9 @@ class DataController extends \Controller
 
         $response->header('Vary', 'Accept');
 
+        // Allow CORS
+        $response->headers->set('Access-Control-Allow-Origin', '*');
+
         return $response;
     }
 
@@ -220,6 +223,9 @@ class DataController extends \Controller
         // Pass a Vary header so that browsers know they have to take the accept header
         // into consideration when they apply caching client side
         $response->header('Vary', 'Accept');
+
+        // Allow CORS
+        $response->header('Access-Control-Allow-Origin', '*');
 
         return $response;
     }
