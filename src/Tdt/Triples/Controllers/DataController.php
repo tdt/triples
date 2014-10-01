@@ -66,6 +66,42 @@ class DataController extends \Controller
 
             return $controller->handleRequest($identifier);
 
+        // Could be a collection
+        } else if ($this->isCoreCollection($identifier)) {
+
+            // Coulnd't find a definition, but it might be a collection
+            $resources = $this->definition->getByCollection($identifier);
+
+            if (count($resources) > 0) {
+
+                $data = new Data();
+                $data->data = new \stdClass();
+                $data->data->datasets = array();
+                $data->data->collections = array();
+
+                foreach ($resources as $res) {
+
+                    // Check if it's a subcollection or a dataset
+                    $collection_uri = rtrim($res['collection_uri'], '/');
+                    if ($collection_uri == $identifier) {
+                        array_push($data->data->datasets, \URL::to($collection_uri . '/' . $res['resource_name']));
+                    } else {
+                        // Push the subcollection if it's not already in the array
+                        if (!in_array(\URL::to($collection_uri), $data->data->collections)) {
+                            array_push($data->data->collections, \URL::to($collection_uri));
+                        }
+                    }
+                }
+            }
+
+            // Fake a definition
+            $data->definition = new \Definition();
+            $uri_array = explode('/', $identifier);
+            $last_chunk = array_pop($uri_array);
+
+            $data->definition->collection_uri = join('/', $uri_array);
+            $data->definition->resource_name = $last_chunk;
+
         // Nothing works out, try to dereference the URI
         } else {
 
@@ -380,5 +416,17 @@ class DataController extends \Controller
     private function isCoreDataset($identifier)
     {
         return $this->definition->exists($identifier);
+    }
+
+    /**
+     * Check if the identifier is part of a collection name
+     *
+     * @param string $collection
+     *
+     * @return boolean
+     */
+    private function isCoreCollection($collection)
+    {
+        return !is_null($this->definition->getByCollection($collection));
     }
 }
