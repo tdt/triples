@@ -427,6 +427,8 @@ class DataController extends \Controller
      */
     private function isCoreCollection($collection)
     {
-        return !is_null($this->definition->getByCollection($collection));
+        $result = $this->definition->getByCollection($collection);
+
+        return !empty($result);
     }
 }
