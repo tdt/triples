@@ -72,12 +72,12 @@ class DataController extends \Controller
             // Coulnd't find a definition, but it might be a collection
             $resources = $this->definition->getByCollection($identifier);
 
-            if (count($resources) > 0) {
+            $data = new Data();
+            $data->data = new \stdClass();
+            $data->data->datasets = array();
+            $data->data->collections = array();
 
-                $data = new Data();
-                $data->data = new \stdClass();
-                $data->data->datasets = array();
-                $data->data->collections = array();
+            if (count($resources) > 0) {
 
                 foreach ($resources as $res) {
 
