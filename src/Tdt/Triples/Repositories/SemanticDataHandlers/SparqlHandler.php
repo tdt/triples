@@ -235,9 +235,9 @@ class SparqlHandler implements SemanticHandlerInterface
      */
     private function mergeGraph($graph, $input_graph)
     {
-        $turtle_graph = $input_graph->serialise('turtle');
+        $rdfxml_string = $input_graph->serialise('rdfxml');
 
-        $graph->parse($turtle_graph, 'turtle');
+        $graph->parse($rdfxml_string, 'rdfxml');
 
         return $graph;
     }
