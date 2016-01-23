@@ -9,7 +9,7 @@
     ],
     "require": {
         "php": ">=5.4.0",
-        "illuminate/support": "4.2.0",
+        "illuminate/support": "4.2.1",
         "semsol/arc2" : "dev-master",
         "easyrdf/easyrdf" : "0.9.1"
     },
@@ -38,5 +38,6 @@
             "php artisan asset:publish tdt/triples"
         ]
     },
-    "minimum-stability": "dev"
+    "minimum-stability": "dev",
+    "prefer-stable": true
 }
