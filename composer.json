@@ -9,9 +9,9 @@
     ],
     "require": {
         "php": ">=5.4.0",
-        "illuminate/support": "4.1.*",
+        "illuminate/support": "4.2.0",
         "semsol/arc2" : "dev-master",
-        "easyrdf/easyrdf" : "dev-devel"
+        "easyrdf/easyrdf" : "0.9.1"
     },
     "require-dev" : {
         "mockery/mockery": "dev-master@dev"
