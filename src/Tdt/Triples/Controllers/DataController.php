@@ -47,7 +47,6 @@ class DataController extends \Controller
 
         // If the identifier represents a dataset in core, ask core to deliver a response
         if ($this->isCoreDataset($identifier)) {
-
             $controller = \App::make('Tdt\Core\Datasets\DatasetController');
 
             $data = $controller->fetchData($identifier);
@@ -61,14 +60,12 @@ class DataController extends \Controller
 
         // The identifier can be a core non-dataset resource (e.g. discovery)
         } else if ($this->isCoreResource($identifier)) {
-
             $controller = \App::make('Tdt\Core\BaseController');
 
             return $controller->handleRequest($identifier);
 
         // Could be a collection
         } else if ($this->isCoreCollection($identifier)) {
-
             // Coulnd't find a definition, but it might be a collection
             $resources = $this->definition->getByCollection($identifier);
 
@@ -78,9 +75,7 @@ class DataController extends \Controller
             $data->data->collections = array();
 
             if (count($resources) > 0) {
-
                 foreach ($resources as $res) {
-
                     // Check if it's a subcollection or a dataset
                     $collection_uri = rtrim($res['collection_uri'], '/');
                     if ($collection_uri == $identifier) {
@@ -104,7 +99,6 @@ class DataController extends \Controller
 
         // Nothing works out, try to dereference the URI
         } else {
-
             // Rebuild the URI as is, the Symfony Request components url-decode everything
             // Dereferencing however needs to deal with the exact request URI's
             $cache_string = sha1($this->getRawRequestURI(\Request::url()));
@@ -113,7 +107,6 @@ class DataController extends \Controller
             if (Cache::has($cache_string)) {
                 $data = Cache::get($cache_string);
             } else {
-
                 $base_uri = \URL::to($identifier);
 
                 if (empty($base_uri)) {
@@ -140,6 +133,9 @@ class DataController extends \Controller
                 $definition = array(
                     'resource_name' => $resource_name,
                     'collection_uri' => $collection_uri,
+                    'updated_at' => time(),
+                    'created_at' => time(),
+                    'source_type' => '__triplesCache'
                 );
 
                 $source_definition = array(
@@ -199,7 +195,6 @@ class DataController extends \Controller
         if (Cache::has($cache_string)) {
             $data = Cache::get($cache_string);
         } else {
-
             // Get the graph pattern query string parameters from the request
             list($s, $p, $o) = $this->getTemplateParameters();
 
@@ -320,9 +315,7 @@ class DataController extends \Controller
         $raw_query_string = '';
 
         foreach ($query_parts as $part) {
-
             if (!empty($part)) {
-
                 $couple = explode('=', $part);
 
                 $raw_query_string .= $couple[0] . '=' . $couple[1] . '&';
@@ -369,7 +362,6 @@ class DataController extends \Controller
         $formatter_class = 'Tdt\\Core\\Formatters\\' . $possible_ext_class . 'Formatter';
 
         if (!class_exists($formatter_class)) {
-
             // Re-attach the dot with the latter part of the uri
             $uri .= '.' . $possible_extension;
 
