@@ -114,15 +114,18 @@ class SemanticSourceRepository implements SemanticSourceRepositoryInterface
 
         // Everything is in place to update the semantic source
 
-        // Delete the previous linked semantic source
-        $result = $old_source_repository->delete($semantic_source->source_id);
-
         // Store the new source
         $source = $source_repository->store($input);
 
-        $semantic_source->source_id = $source['id'];
-        $semantic_source->source_type = $source['type'] . 'Source';
-        $semantic_source->save();
+        if (!empty($source)) {
+
+            // Delete the previous linked semantic source
+            $result = $old_source_repository->delete($semantic_source->source_id);
+
+            $semantic_source->source_id = $source['id'];
+            $semantic_source->source_type = $source['type'] . 'Source';
+            $semantic_source->save();
+        }
 
         return $semantic_source->toArray();
     }
@@ -168,6 +171,10 @@ class SemanticSourceRepository implements SemanticSourceRepositoryInterface
         }
 
         $source = $semantic_source->source()->first();
+
+        if (empty($source)) {
+            \App::abort(404, "The semantic source with id, $id can be retrieved, however the source it links with, can't.");
+        }
 
         $source_properties = array(
             'id' => $id,
@@ -219,7 +226,7 @@ class SemanticSourceRepository implements SemanticSourceRepositoryInterface
 
         // If no source type is given, abort the process.
         if (empty($type)) {
-            \App::abort(400, "Please provide a source type.");
+            \App::abort(400, "Please provide a source type, support source types are: ldf, rdf, sparql, turtle.");
         }
 
         return $type;

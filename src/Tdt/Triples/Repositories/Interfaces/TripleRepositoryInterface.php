@@ -21,6 +21,16 @@ interface TripleRepositoryInterface
     public function getTriples($base_uri, $limit, $offset);
 
     /**
+     * Add void and hydra meta-data to an existing graph
+     *
+     * @param EasyRdf_Graph $graph    The graph to which meta data has to be added
+     * @param integer       $count    The total amount of triples that match the URI
+     *
+     * @return EasyRdf_Graph $graph
+     */
+    public function addMetaTriples($graph, $limit, $offset, $count);
+
+    /**
      * Return the total amount of triples that
      * have a subject that matches base_uri
      *

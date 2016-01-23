@@ -30,9 +30,15 @@ class TriplesController extends \Controller
                 return $this->put($id);
                 break;
             case "GET":
-                return $this->get();
+                return $this->get($id);
                 break;
             case "POST":
+
+                if (!empty($id)) {
+                    // Don't allow POSTS to specific configurations (only PUT and DELETE allowed)
+                    \App::abort(405, "The HTTP method POST is not allowed on this resource. POST is only allowed on api/triples.");
+                }
+
                 return $this->post();
                 break;
             case "PATCH":
@@ -56,14 +62,20 @@ class TriplesController extends \Controller
      *
      * @return \Response
      */
-    public function get()
+    public function get($id = null)
     {
         Auth::requirePermissions('definitions.view');
 
-        $sources = $this->semantic_source->getAllConfigurations();
+        // If the id isn't empty
+        if (!empty($id)) {
+            $data = $this->semantic_source->getSourceConfiguration($id);
+        } else {
+            $data = $this->semantic_source->getAllConfigurations();
+        }
 
         $result = new Data();
-        $result->data = $sources;
+
+        $result->data = $data;
 
         return ContentNegotiator::getResponse($result, 'json');
     }
@@ -86,10 +98,8 @@ class TriplesController extends \Controller
 
         if (!empty($result) && is_array($result)) {
 
-            // Sync the semantic data in our store
-            $this->triple_store->cacheTriples($result['id'], $input);
-
             $response = \Response::make("", 200);
+
             $response->header('Location', \URL::to('api/triples'));
 
             return $response;
@@ -98,22 +108,28 @@ class TriplesController extends \Controller
         }
     }
 
-    public function put($id)
+    /**
+     * Update an existing semantic source
+     *
+     * @param integer $id The id of the semantic source that needs to be updated
+     *
+     * @return \Response
+     */
+    public function put($id = null)
     {
         // Use the core package's authentication for now
         Auth::requirePermissions('dataset.create');
+
+        // If id is null, abort
+        if (is_null($id)) {
+            \App::abort(404, "Please provide a fitting id with the request, the id we found is null.");
+        }
 
         $input = $this->fetchInput();
 
         $result = $this->semantic_source->update($id, $input);
 
         if (!empty($result) && is_array($result)) {
-
-            // Remove the old triples from the store
-            $this->triple_store->removeTriples($id);
-
-            // Sync the semantic data in our store
-            $this->triple_store->cacheTriples($result['id'], $input);
 
             $response = \Response::make("", 200);
             $response->header('Location', \URL::to('api/triples'));

@@ -3,6 +3,7 @@
 namespace Tdt\Triples;
 
 use Illuminate\Support\ServiceProvider;
+use Tdt\Triples\Commands\CacheTriples;
 
 class TriplesServiceProvider extends ServiceProvider
 {
@@ -57,6 +58,17 @@ class TriplesServiceProvider extends ServiceProvider
             'Tdt\Triples\Repositories\Interfaces\SparqlSourceRepositoryInterface',
             'Tdt\Triples\Repositories\SparqlSourceRepository'
         );
+
+        $this->app->bind(
+            'Tdt\Triples\Repositories\Interfaces\LdfSourceRepositoryInterface',
+            'Tdt\Triples\Repositories\LdfSourceRepository'
+        );
+
+        $this->app['triples.load'] = $this->app->share(function ($app) {
+            return new CacheTriples();
+        });
+
+        $this->commands('triples.load');
     }
 
     /**

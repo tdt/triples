@@ -10,7 +10,7 @@ class SparqlSourceRepository extends BaseSourceRepository implements SparqlSourc
 
     protected $rules = array(
         'endpoint' => 'required',
-        'depth' => 'integer|min:1|max:10',
+        'depth' => 'integer|min:1|max:5',
     );
 
     public function __construct(\SparqlSource $model)
@@ -67,7 +67,13 @@ class SparqlSourceRepository extends BaseSourceRepository implements SparqlSourc
                 'name' => 'Depth',
                 'description' => 'The depth that a URI can go to be a valid triple subject, so that it can be part of the collection of triples that are derefenced by the requested URI.',
                 'type' => 'integer',
-                'default_value' => 3
+                'default_value' => 1
+            ),
+            'named_graph' => array(
+                'required' => false,
+                'name' => 'Named graph',
+                'description' => 'The name of the named graph that should be included to resolve triples.',
+                'type' => 'string'
             ),
         );
     }

@@ -6,7 +6,7 @@ env:
   - DB=mysql
 before_script:
   - sudo hostname test.travis-ci.org
-  - composer install
+  - composer install --no-scripts
 
 script:
 - phpunit

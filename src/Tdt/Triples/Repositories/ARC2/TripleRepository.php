@@ -4,7 +4,8 @@ namespace Tdt\Triples\Repositories\ARC2;
 
 use Tdt\Triples\Repositories\Interfaces\TripleRepositoryInterface;
 use Tdt\Triples\Repositories\Interfaces\SemanticSourceRepositoryInterface;
-use Tdt\Triples\Repositories\QueryBuilder;
+use Tdt\Triples\Repositories\SparqlQueryBuilder;
+use Tdt\Core\Cache\Cache;
 
 class TripleRepository implements TripleRepositoryInterface
 {
@@ -20,148 +21,81 @@ class TripleRepository implements TripleRepositoryInterface
     public function __construct(SemanticSourceRepositoryInterface $semantic_sources)
     {
         $this->semantic_sources = $semantic_sources;
-        $this->query_builder = new QueryBuilder();
+
+        $this->query_builder = new SparqlQueryBuilder();
+
+        $this->local_store = \App::make('Tdt\Triples\Repositories\SemanticDataHandlers\LocalStoreHandler');
+
+        $this->sparql_handler = \App::make('Tdt\Triples\Repositories\SemanticDataHandlers\SparqlHandler');
+
+        $this->ldf_handler = \App::make('Tdt\Triples\Repositories\SemanticDataHandlers\LDFHandler');
     }
 
     /**
      * Return all triples with a subject that equals the base uri
      *
-     * @param string $base_uri
+     * @param string  $base_uri
      * @param integer $limit
      * @param integer $offset
+     * @param boolean $deference If dereferenced, use the depth of the configured semantic source, if not use 1 as depth
      *
      * @return EasyRdf_Graph
      */
-    public function getTriples($base_uri, $parameters, $limit = 5000, $offset = 0)
+    public function getTriples($base_uri, $limit = 100, $offset = 0, $dereference = false)
     {
-        // Fetch the query string parameters
-        $this->parameters = $parameters;
+        // Check if hash variants should be used in the grah patterns to fetch matching triples
+        $this->checkHashVariants();
 
-        $this->query_builder->setParameters($parameters);
+        $depth = null;
 
-        $query = $this->query_builder->createConstructSparqlQuery($base_uri, $limit, $offset);
+        if (!$dereference) {
+            $depth = 1;
+        }
 
-        $store = $this->setUpArc2Store();
+        $original_limit = $limit;
 
-        $result = $store->query($query);
+        $original_offset = $offset;
 
-        // The result will be in an array structure, we need to build an
-        // EasyRdf_Graph out of this
+        // Fetch the total amount of matching triples, over all of the configured semantic sources
+        $total_triples_count = $this->getCount($base_uri, $depth);
 
-        if (!empty($result['result'])) {
-            $graph = $this->buildGraph($result['result']);
+        // Fetch the local amount of matching triples
+        $count_local_triples = $this->local_store->getCount($base_uri, $depth);
+
+        // Create the resulting graph
+        $graph = new \EasyRdf_Graph();
+
+        if ($count_local_triples < $offset) {
+            $offset -= $count_local_triples;
         } else {
-            $graph = new \EasyRdf_Graph();
+
+            // Add triples from the local store
+            $start_amount = $graph->countTriples();
+
+            $graph = $this->local_store->addTriples($base_uri, $graph, $limit, $offset, $depth);
+
+            $offset -= $graph->countTriples() - $start_amount;
         }
 
-        if (!$result) {
-            $errors = $store->getErrors();
-            $message = array_shift($errors);
-
-            \Log::error("Error occured in the triples package, while trying to retrieve triples: " . $message);
+        if ($offset < 0) {
+            $offset = 0;
         }
 
-        // Fetch data out of the sparql endpoint as well,
-        // if necessary according to the paging parameters
-        // What we are trying to accomplish is a simulated paging mechanism
-        // But since sparql sources aren't cached, this mechanism will
-        // have to be simulated.
-        $count_arc_triples = $this->countARC2Triples($base_uri);
+        $sparql_triples_count = $this->sparql_handler->getCount($base_uri, $depth);
 
-        // Total amount of triples
-        $total_triples_count = $this->getCount($base_uri);
+        // If there's more room for triples, and the sparql can provide sufficient triples
+        // according to the paging parameters, add triples from the sparql
+        if ($graph->countTriples() < $limit && $offset < $sparql_triples_count) {
 
-        $triples_fetched = $count_arc_triples - $offset;
+            // For every semantic source, count the triples we'll get out of them (sparql and ldf for the moment)
+            $graph = $this->sparql_handler->addTriples($base_uri, $graph, $limit, $offset, $depth);
+        }
 
-        if ($count_arc_triples < $offset + $limit) {
+        $ldf_triples_count = $this->ldf_handler->getCount($base_uri, $depth);
 
-            $total_triples = 0;
+        if ($graph->countTriples() < $limit && $offset < $ldf_triples_count) {
 
-            if ($count_arc_triples > $offset) {
-                $total_triples = $count_arc_triples - $offset;
-            }
-
-            // If the fetched triples are negative, this means that we didnt fetch any triples at all
-            if ($triples_fetched < 0) {
-                $offset = $triples_fetched * -1;
-                $graph = new EasyRdf_Graph();
-            } else {
-                // The entire offset has been met in the ARC2 store
-                $offset = 0;
-            }
-
-            // For every semantic source, count the triples we'll get out of them
-            $sparql_repo = \App::make('Tdt\Triples\Repositories\Interfaces\SparqlSourceRepositoryInterface');
-
-            foreach ($sparql_repo->getAll() as $sparql_source) {
-
-                if ($total_triples < $limit) {
-
-                    $endpoint = $sparql_source['endpoint'];
-                    $pw = $sparql_source['endpoint_password'];
-                    $user = $sparql_source['endpoint_user'];
-
-                    $endpoint = rtrim($endpoint, '/');
-
-                    $count_query = $this->query_builder->createCountQuery($base_uri);
-
-                    $count_query = urlencode($count_query);
-                    $count_query = str_replace("+", "%20", $count_query);
-
-                    $query_uri = $endpoint . '?query=' . $count_query . '&format=' . urlencode("application/sparql-results+json");
-
-                    $result = $this->executeUri($query_uri, $user, $pw);
-
-                    $response = json_decode($result);
-
-                    if (!empty($response)) {
-
-                        $count = $response->results->bindings[0]->count->value;
-
-                        // If the amount of matching triples is higher than the offset
-                        // add them and update the offset, if not higher, then only update the offset
-
-                        if ($count > $offset) {
-
-                            // Read the triples from the sparql endpoint
-                            $query_limit = $limit - $total_triples;
-
-                            $query = $this->query_builder->createConstructSparqlQuery($base_uri, $query_limit, $offset);
-
-                            $query = urlencode($query);
-                            $query = str_replace("+", "%20", $query);
-
-                            $query_uri = $endpoint . '?query=' . $query . '&format=' . urlencode("application/rdf+xml");
-
-                            $result = $this->executeUri($query_uri, $user, $pw);
-
-                            if (!empty($result) && $result[0] == '<') {
-
-                                // Parse the triple response and retrieve the triples from them
-                                $result_graph = new \EasyRdf_Graph();
-                                $parser = new \EasyRdf_Parser_RdfXml();
-
-                                $parser->parse($result_graph, $result, 'rdfxml', null);
-
-                                $graph = $this->mergeGraph($graph, $result_graph);
-
-                                $total_triples += $count - $offset;
-
-                            } else {
-                                \Log::error("Something went wrong while fetching the triples from a sparql source. The error was " . $result . ". The query was : " . $query_uri);
-                            }
-
-                        } else {
-                            // Update the offset
-                            $offset -= $count;
-                        }
-
-                        if ($offset < 0) {
-                            $offset = 0;
-                        }
-                    }
-                }
-            }
+            $graph = $this->ldf_handler->addTriples($base_uri, $graph, $limit, $offset, $depth);
         }
 
         // If the graph doesn't contain any triples, then the resource can't be resolved
@@ -169,14 +103,14 @@ class TripleRepository implements TripleRepositoryInterface
             \App::abort(404, 'The resource could not be found.');
         }
 
-        // Add the void and hydra triples to the resulting graph
-        $graph = $this->addMetaTriples($base_uri, $graph, $total_triples_count);
+        // Add the void and hydra meta-data triples to the resulting graph
+        $graph = $this->addMetaTriples($graph, $original_limit, $original_offset, $total_triples_count);
 
         return $graph;
     }
 
     /**
-     * Store (=cache) triples into a triplestore (or equivalents) for optimization
+     * Store triples into our local store
      *
      * @param integer $id     The id of the configured semantic source
      * @param array   $config The configuration needed to extract the triples
@@ -228,6 +162,12 @@ class TripleRepository implements TripleRepositoryInterface
                 $caching_necessary = false;
 
                 break;
+
+            case 'ldf':
+
+                // Do nothing the ldf endpoint is a queryable endpoint itself
+                $caching_necessary = false;
+                break;
             default:
                 \App::abort(
                     400,
@@ -238,15 +178,16 @@ class TripleRepository implements TripleRepositoryInterface
                 break;
         }
 
+        // If the semantic source needs caching in our local store@
         if ($caching_necessary) {
 
             // Make the graph name to cache the triples into
             $graph_name = self::$graph_name . $id;
 
-            // Serialise the triples into turtle
+            // Serialise the triples into a turtle string
             $ttl = $graph->serialise('turtle');
 
-            // Parse the turlte into an ARC graph
+            // Parse the turtle into an ARC graph
             $arc_parser = \ARC2::getTurtleParser();
 
             $ser = \ARC2::getNTriplesSerializer();
@@ -255,11 +196,11 @@ class TripleRepository implements TripleRepositoryInterface
             $arc_parser->parse('', $ttl);
 
             // Serialize the triples again, this is because an EasyRdf_Graph has
-            // troubles with serializing unicode. The underlying bytes are
-            // not properly converted to utf8 characters by our serialize function
+            // troubles with serializing some unicode characters. The underlying bytes are
+            // not properly converted to utf8
             // A dump shows that all unicode encodings through serialization are the same (in easyrdf and arc)
             // however when we convert the string (binary) into a utf8, only the arc2 serialization
-            // comes out correctly, hence something beneath the encoding (byte sequences?) must hold some wrongs.
+            // comes out correctly, hence something beneath the encoding (byte sequences?) must hold some wrongs in the EasyRdf library.
             $triples = $ser->getSerializedTriples($arc_parser->getTriples());
 
             preg_match_all("/(<.*\.)/", $triples, $matches);
@@ -335,7 +276,6 @@ class TripleRepository implements TripleRepositoryInterface
                 // Execute the query
                 $result = $store->query($query);
 
-                // TODO logging
                 if (!$result) {
                     \Log::error("Inserting the triple (" . $triple . ") failed, please make sure that it's a valid triple.");
                 } else {
@@ -367,7 +307,7 @@ class TripleRepository implements TripleRepositoryInterface
             'db_user' => $mysql_config['username'],
             'db_pwd' => $mysql_config['password'],
             'store_name' => $mysql_config['prefix'],
-            );
+        );
 
         $store = \ARC2::getStore($config);
 
@@ -403,6 +343,7 @@ class TripleRepository implements TripleRepositoryInterface
 
     /**
      * Serialize triples to a format acceptable for a triplestore endpoint (utf8 chacracters)
+     *
      * @param string $triples
      *
      * @return string
@@ -422,57 +363,30 @@ class TripleRepository implements TripleRepositoryInterface
     }
 
     /**
-     * Create an EasyRdf_Graph out of an ARC2 query result structure
-     *
-     * @param array $result
-     *
-     * @return EasyRdf_Graph
-     */
-    private function buildGraph(array $result)
-    {
-        $graph = new \EasyRdf_Graph();
-
-        if (!empty($result)) {
-
-            $store = $this->setUpArc2Store();
-
-            $ttl_string = $store->toNTriples($result);
-
-            $parser = new \EasyRdf_Parser_Turtle();
-
-            $parser->parse($graph, $ttl_string, 'turtle', '');
-        }
-
-        return $graph;
-    }
-
-    /**
      * Add void and hydra meta-data to an existing graph
      *
-     * @param string        $base_uri The URI of the request
      * @param EasyRdf_Graph $graph    The graph to which meta data has to be added
      * @param integer       $count    The total amount of triples that match the URI
      *
      * @return EasyRdf_Graph $graph
      */
-    private function addMetaTriples($base_uri, $graph, $count)
+    public function addMetaTriples($graph, $limit, $offset, $count)
     {
         // Add the void and hydra namespace to the EasyRdf framework
         \EasyRdf_Namespace::set('hydra', 'http://www.w3.org/ns/hydra/core#');
         \EasyRdf_Namespace::set('void', 'http://rdfs.org/ns/void#');
         \EasyRdf_Namespace::set('dcterms', 'http://purl.org/dc/terms/');
 
-        // Count the graph triples of the entire query (including the parameter strings)
-        $total_graph_triples = $graph->countTriples();
-
         // Add the meta data semantics to the graph
         $root = \Request::root();
         $root .= '/';
 
+        $base_uri = $root . 'all';
+
         $identifier = str_replace($root, '', $base_uri);
 
-        $graph->addResource($base_uri, 'a', 'void:Dataset');
-        $graph->addResource($base_uri, 'a', 'hydra:Collection');
+        $graph->addResource($base_uri . '#dataset', 'a', 'void:Dataset');
+        $graph->addResource($base_uri . '#dataset', 'a', 'hydra:Collection');
 
         $resource = $graph->resource($base_uri);
 
@@ -493,31 +407,129 @@ class TripleRepository implements TripleRepositoryInterface
 
         $iri_template = $graph->newBNode();
         $iri_template->addResource('a', 'hydra:IriTemplate');
-        $iri_template->addLiteral('hydra:template', $base_uri . '{?subject,predicate,object}');
+        $iri_template->addLiteral('hydra:template', $root . 'all' . '{?subject,predicate,object}');
 
         $iri_template->addResource('hydra:mapping', $subject_temp_mapping);
         $iri_template->addResource('hydra:mapping', $predicate_temp_mapping);
         $iri_template->addResource('hydra:mapping', $object_temp_mapping);
 
         // Add the template to the requested URI resource in the graph
-        $graph->addResource($base_uri, 'hydra:search', $iri_template);
+        $graph->addResource($base_uri . '#dataset', 'hydra:search', $iri_template);
 
-        $graph->addResource($base_uri, 'hydra:entrypoint', $root);
+        $is_deferenced = false;
 
-        $fullUrl = \Request::url();
+        if (strtolower(\Request::segment(1)) != 'all') {
+            $full_url = \Request::root() . '/' . \Request::path();
 
-        foreach (\Request::all() as $param => $value) {
-            $fullUrl .= $param . '=' . $value;
+            $is_deferenced = true;
+        } else {
+            $full_url = $base_uri . '?';
         }
 
-        $graph->addLiteral($fullUrl, 'hydra:totalItems', \EasyRdf_Literal::create($total_graph_triples, null, 'xsd:integer'));
-        $graph->addLiteral($fullUrl, 'void:triples', \EasyRdf_Literal::create($total_graph_triples, null, 'xsd:integer'));
+        $template_url = $full_url;
+        $templates = array('subject', 'predicate', 'object');
+        $has_param = false;
+
+        $query_string = $_SERVER['QUERY_STRING'];
+
+        $query_parts = explode('&', $query_string);
+
+        foreach ($query_parts as $part) {
+
+            if (!empty($part)) {
+
+                $couple = explode('=', $part);
+
+                if (strtolower($couple[0]) ==  'subject') {
+                    $template_url .= $couple[0] . '=' . $couple[1] . '&';
+                    $has_param = true;
+                }
+
+                if (strtolower($couple[0]) ==  'predicate') {
+                    $template_url .= $couple[0] . '=' . $couple[1] . '&';
+                    $has_param = true;
+                }
+
+                if (strtolower($couple[0]) ==  'object') {
+                    $template_url .= $couple[0] . '=' . $couple[1] . '&';
+                    $has_param = true;
+                }
+
+                $full_url .= $couple[0] . '=' . $couple[1] . '&';
+            }
+        }
+
+        $full_url = rtrim($full_url, '?');
+        $full_url = rtrim($full_url, '&');
+
+        $template_url = rtrim($template_url, '?');
+        $template_url = rtrim($template_url, '&');
+
+        $full_url = str_replace('#', '%23', $full_url);
+        $template_url = str_replace('#', '%23', $template_url);
+
+        if ($is_deferenced) {
+            $full_url .= '#dataset';
+        }
+
+        // Add paging information
+        $graph->addLiteral($full_url, 'hydra:totalItems', \EasyRdf_Literal::create($count, null, 'xsd:integer'));
+        $graph->addLiteral($full_url, 'void:triples', \EasyRdf_Literal::create($count, null, 'xsd:integer'));
+        $graph->addLiteral($full_url, 'hydra:itemsPerPage', \EasyRdf_Literal::create($limit, null, 'xsd:integer'));
+        $graph->addResource($full_url, 'void:subset', \Request::root() . '/all#dataset');
+
+        $paging_info = $this->getPagingInfo($limit, $offset, $count);
+
+        foreach ($paging_info as $key => $info) {
+
+            switch($key) {
+                case 'next':
+                    if ($has_param) {
+                        $glue = '&';
+                    } else {
+                        $glue = '?';
+                    }
+
+                    $graph->addResource($full_url, 'hydra:nextPage', $template_url . $glue . 'limit=' . $info['limit'] . '&offset=' . $info['offset']);
+                    break;
+                case 'previous':
+                    if ($has_param) {
+                        $glue = '&';
+                    } else {
+                        $glue = '?';
+                    }
+
+                    $graph->addResource($full_url, 'hydra:previousPage', $template_url . $glue . 'limit=' . $info['limit'] . '&offset=' . $info['offset']);
+                    break;
+                case 'last':
+                    if ($has_param) {
+                        $glue = '&';
+                    } else {
+                        $glue = '?';
+                    }
+
+                    $graph->addResource($full_url, 'hydra:lastPage', $template_url . $glue . 'limit=' . $info['limit'] . '&offset=' . $info['offset']);
+                    break;
+                case 'first':
+                    if ($has_param) {
+                        $glue = '&';
+                    } else {
+                        $glue = '?';
+                    }
+
+                    $graph->addResource($full_url, 'hydra:firstPage', $template_url . $glue . 'limit=' . $info['limit'] . '&offset=' . $info['offset']);
+                    break;
+            }
+        }
+
+        // Tell the agent that it's a subset
+        $graph->addResource($root . 'all#dataset', 'void:subset', $full_url);
 
         return $graph;
     }
 
     /**
-     * Merge two graphs and return the result
+     * Merge two graphs and return the resulting merged graph
      *
      * @param EasyRdf_Graph $graph
      * @param EasyRdf_Graph $input_graph
@@ -537,115 +549,67 @@ class TripleRepository implements TripleRepositoryInterface
      * Return the total amount of triples that
      * have a subject that matches base_uri
      *
-     * @param string $base_uri
-     *@
+     * @param string  $base_uri The base uri that represents the subject of the triple pattern
+     * @param integer $depth    The depth the queries should have, handlers should not override this if given
+     *
      * @return integer
      */
-    public function getCount($base_uri)
+    public function getCount($base_uri, $depth = null)
     {
-        $triples_amount = 0;
+        // Count the relevant triples from our local store
+        $triples_amount = $this->local_store->getCount($base_uri, $depth);
 
-        $triples_amount += $this->countARC2Triples($base_uri);
+        // Count the relevant triples from sparql sources
+        $triples_amount += $this->sparql_handler->getCount($base_uri, $depth);
 
-        // Count the triples in the sparql sources (these aren't cached in our store)
-        $sparql_repo = \App::make('Tdt\Triples\Repositories\Interfaces\SparqlSourceRepositoryInterface');
+        // Count the relevant triples from the LDF sources
+        return $triples_amount += $this->ldf_handler->getCount($base_uri);
+    }
 
-        foreach ($sparql_repo->getAll() as $sparql_source) {
+    /**
+     * Return paging headers
+     *
+     * @param integer $limit  The size of a page
+     * @param integer $offset The offset of search result
+     * @param integer $total  The total amount of results
+     *
+     * @return array
+     */
+    private function getPagingInfo($limit, $offset, $total)
+    {
+        $paging = array();
 
-            $endpoint = $sparql_source['endpoint'];
-            $pw = $sparql_source['endpoint_password'];
-            $user = $sparql_source['endpoint_user'];
+        // Add the first page
+        $paging['first'] = array('limit' => $limit, 'offset' => 0);
 
-            $endpoint = rtrim($endpoint, '/');
+        // Calculate the paging parameters and pass them with the data object
+        if ($offset + $limit < $total) {
 
-            $count_query = $this->query_builder->createCountQuery($base_uri);
+            $paging['next'] = array('offset' => ($limit + $offset), 'limit' => $limit);
 
-            $count_query = urlencode($count_query);
-            $count_query = str_replace("+", "%20", $count_query);
+            $last_page = ceil($total / $limit);
 
-            $query_uri = $endpoint . '?query=' . $count_query . '&format=' . urlencode("application/sparql-results+json");
+            $paging['last'] = array('offset' => ($last_page - 1) * $limit, 'limit' => $limit);
+        }
 
-            $result = $this->executeUri($query_uri, $user, $pw);
-
-            $response = json_decode($result);
-
-            if (!empty($response)) {
-
-                $count = $response->results->bindings[0]->count->value;
-
-                $triples_amount += $count;
+        if ($offset > 0 && $total > 0) {
+            $previous = $offset - $limit;
+            if ($previous < 0) {
+                $previous = 0;
             }
+
+            $paging['previous'] = array('offset' => $previous, 'limit' => $limit);
         }
 
-        return $triples_amount;
+        return $paging;
     }
 
     /**
-     * Count the amount of triples that are in the ARC2 store given a certain base_uri
+     * Check if hash variants should be used by the sparql query builder
      *
-     * @param string $base_uri
-     *
-     * @return integer
      */
-    private function countARC2Triples($base_uri)
+    private function checkHashVariants()
     {
-        $count_query = $this->query_builder->createCountQuery($base_uri);
-
-        $store = $this->setUpArc2Store();
-
-        $result = $store->query($count_query, 'raw');
-
-        $arc2_triples_count = $result['rows'][0]['count'];
-
-        return $arc2_triples_count;
-    }
-
-    /**
-     * Execute a query using cURL and return the result.
-     * This function will abort upon error.
-     */
-    private function executeUri($uri, $user = '', $password = '')
-    {
-        // Check if curl is installed on this machine
-        if (!function_exists('curl_init')) {
-            \App::abort(500, "cURL is not installed as an executable on this server, this is necessary to execute the SPARQL query properly.");
-        }
-
-        // Initiate the curl statement
-        $ch = curl_init();
-
-        // If credentials are given, put the HTTP auth header in the cURL request
-        if (!empty($user)) {
-
-            curl_setopt($ch, CURLOPT_HTTPAUTH, CURLAUTH_ANY);
-            curl_setopt($ch, CURLOPT_USERPWD, $user . ":" . $password);
-        }
-
-        // Set the request uri
-        curl_setopt($ch, CURLOPT_URL, $uri);
-
-        // Request for a string result instead of having the result being outputted
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-
-        // Execute the request
-        $response = curl_exec($ch);
-
-        if (!$response) {
-            $curl_err = curl_error($ch);
-            \Log::error("Something went wrong while executing a count sparql query. The request we put together was: $uri.");
-        }
-
-        $response_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-
-        // According to the SPARQL 1.1 spec, a SPARQL endpoint can only return 200,400,500 reponses
-        if ($response_code == '400') {
-            \Log::error("The SPARQL endpoint returned a 400 error. The error was: $response. The URI was: $uri");
-        } elseif ($response_code == '500') {
-            \Log::error("The SPARQL endpoint returned a 500 error. The URI was: $uri");
-        }
-
-        curl_close($ch);
-
-        return $response;
+        SparqlQueryBuilder::setHashVariant(\Request::query('hash_variants', false));
     }
 }
