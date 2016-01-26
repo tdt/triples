@@ -77,5 +77,5 @@
 
         </form>
     </div>
-    <script type="text/javascript" src="{{ URL::to('packages/triples/triples.min.js') }}"></script>
+    <script type="text/javascript" src="{{ URL::to('packages/tdt/triples/triples.min.js') }}"></script>
 @stop
